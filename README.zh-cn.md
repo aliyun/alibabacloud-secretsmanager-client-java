@@ -1,0 +1,78 @@
+# 阿里云凭据管家Java客户端
+[![GitHub version](https://badge.fury.io/gh/aliyun%2Falibabacloud-secretsmanager-client-java.svg)](https://badge.fury.io/gh/aliyun%2Falibabacloud-secretsmanager-client-java)
+
+阿里云凭据管家Java客户端可以使Java开发者快速使用阿里云凭据。你可以通过***Maven***快速使用。
+
+*其他语言版本: [English](README.md), [简体中文](README.zh-cn.md)*
+
+- [Issues](https://github.com/aliyun/alibabacloud-secretsmanager-client-java/issues)
+- [Release](https://github.com/aliyun/alibabacloud-secretsmanager-client-java/releases)
+
+## 许可证
+
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html)
+
+
+## 优势
+* 支持用户快速集成获取凭据信息
+* 支持阿里云凭据管家内存和文件两种缓存凭据机制
+* 支持凭据名称相同场景下的跨地域容灾
+* 支持默认规避策略和用户自定义规避策略
+
+## 软件要求
+
+- Java 1.8 或以上版本
+- Maven
+
+## 安装
+
+可以通过Maven的方式在项目中使用凭据管家Java客户端。导入方式如下:
+
+```
+<dependency>
+    <groupId>com.aliyun</groupId>
+    <artifactId>alibabacloud-secretsmanager-client</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+
+## 构建
+
+你可以从Github检出代码通过下面的maven命令进行构建。
+
+```
+mvn clean install -DskipTests
+```
+
+## 示例代码
+### 一般用户代码
+* 通过系统环境变量构建客户端
+
+```
+    SecretCacheClient client = SecretCacheClientBuilder.newClient();  
+    SecretInfo secretInfo = client.getSecretInfo("#secretName#");
+```
+
+* 通过指定参数(accessKey、accessSecret、regionId等)构建客户端
+
+```
+    SecretCacheClient client = SecretCacheClientBuilder.newCacheClientBuilder(
+                 BaseSecretManagerClientBuilder.standard().withCredentialsProvider(CredentialsProviderUtils  
+                 .withAccessKey("#accessKeyId#", "#accessKeySecret#")).withRegion("#regionId#").build()).build();  
+    SecretInfo secretInfo = client.getSecretInfo("#secretName#");
+```
+
+### 定制化用户代码
+* 使用自定义参数或用户自己实现
+
+```
+   SecretCacheClient client = SecretCacheClientBuilder.newCacheClientBuilder(BaseSecretManagerClientBuilder.standard()  
+                          .withCredentialsProvider(CredentialsProviderUtils.withAccessKey("#accessKeyId#", "#accessKeySecret#"))   
+                          .withRegion("#regionId#").withBackoffStrategy(new FullJitterBackoffStrategy(3, 2000, 10000)).build())  
+                          .withCacheSecretStrategy(new FileCacheSecretStoreStrategy("#cacheSecretPath#", true,"#salt#")).withRefreshSecretStrategy(new DefaultRefreshSecretStrategy("#ttlName#"))  
+                           .withCacheStage("#stage#").withSecretTTL("#secretName#", 1 * 60 * 1000l).withSecretTTL("#secretName1#", 2 * 60 * 1000l).build();  
+   SecretInfo secretInfo = client.getSecretInfo("#secretName#");
+```
+
+ 

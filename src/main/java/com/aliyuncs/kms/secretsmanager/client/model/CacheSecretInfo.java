@@ -44,6 +44,18 @@ public class CacheSecretInfo implements Serializable, Cloneable {
         return refreshTimestamp;
     }
 
+    public void setSecretInfo(SecretInfo secretInfo) {
+        this.secretInfo = secretInfo;
+    }
+
+    public void setStage(String stage) {
+        this.stage = stage;
+    }
+    
+    public void setRefreshTimestamp(long refreshTimestamp) {
+        this.refreshTimestamp = refreshTimestamp;
+    }
+
     @Override
     public CacheSecretInfo clone() {
         CacheSecretInfo cacheSecretInfo;

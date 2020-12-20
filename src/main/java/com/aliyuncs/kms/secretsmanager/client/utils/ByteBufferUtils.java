@@ -19,7 +19,7 @@ public class ByteBufferUtils {
         try {
             return ByteBuffer.wrap(content.getBytes("utf-8"));
         } catch (UnsupportedEncodingException e) {
-            CommonLogger.getCommonLogger(CacheClientConstant.modeName).errorf("wrap content error", e);
+            CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:wrapContent", e);
             throw new RuntimeException(e);
         }
     }

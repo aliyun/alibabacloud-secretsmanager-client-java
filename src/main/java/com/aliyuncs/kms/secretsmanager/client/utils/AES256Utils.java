@@ -34,7 +34,7 @@ public class AES256Utils {
             cipher.init(Cipher.ENCRYPT_MODE, getSecretKeySpec(secret, salt), ivSpec);
             return cipher.doFinal(data);
         } catch (Exception e) {
-            CommonLogger.getCommonLogger(CacheClientConstant.modeName).errorf("AES256 encrypt error", e);
+            CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:AES256Encrypt", e);
             throw new CacheSecretException("AES256 encrypt fail", e);
         }
     }
@@ -46,7 +46,7 @@ public class AES256Utils {
             cipher.init(Cipher.DECRYPT_MODE, getSecretKeySpec(secret, salt), ivSpec);
             return new String(cipher.doFinal(data));
         } catch (Exception e) {
-            CommonLogger.getCommonLogger(CacheClientConstant.modeName).errorf("AES256 decrypt error", e);
+            CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:AES256Decrypt", e);
             throw new CacheSecretException("AES256 decrypt fail", e);
         }
     }

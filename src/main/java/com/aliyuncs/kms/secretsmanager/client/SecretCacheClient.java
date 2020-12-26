@@ -135,10 +135,10 @@ public class SecretCacheClient implements Closeable {
                 removeRefreshTask(secretName);
                 addRefreshTask(secretName, new RefreshSecretTask(secretName));
             } catch (InterruptedException e) {
-                CommonLogger.getCommonLogger(CacheClientConstant.modeName).errorf("refreshNow error", e);
+                CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:refreshNow", e);
                 throw e;
             } catch (Exception e) {
-                CommonLogger.getCommonLogger(CacheClientConstant.modeName).errorf("refreshNow error", e);
+                CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:refreshNow", e);
                 return false;
             }
         }
@@ -155,7 +155,7 @@ public class SecretCacheClient implements Closeable {
             try {
                 secretInfo = getSecretValue(secretName);
             } catch (CacheSecretException e) {
-                CommonLogger.getCommonLogger(CacheClientConstant.modeName).errorf("SecretCacheClient init getSecretValue error", e);
+                CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:initSecretCacheClient", e);
                 if (judgeSkipRefreshException(e)) {
                     throw e;
                 }
@@ -163,13 +163,13 @@ public class SecretCacheClient implements Closeable {
             storeAndRefresh(secretName, secretInfo);
         }
 
-        CommonLogger.getCommonLogger(CacheClientConstant.modeName).infof("secretCacheClient init success");
+        CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).infof("secretCacheClient init success");
     }
 
     private boolean judgeCacheExpire(final CacheSecretInfo cacheSecretInfo) {
         long ttl = refreshSecretStrategy.parseTTL(cacheSecretInfo.getSecretInfo());
         if (ttl <= 0) {
-            ttl = secretTTLMap.get(cacheSecretInfo.getSecretInfo().getSecretName());
+            ttl = secretTTLMap.getOrDefault(cacheSecretInfo.getSecretInfo().getSecretName(), DEFAULT_TTL);
         }
         return System.currentTimeMillis() - cacheSecretInfo.getRefreshTimestamp() > ttl;
     }
@@ -182,7 +182,7 @@ public class SecretCacheClient implements Closeable {
         try {
             resp = secretClient.getSecretValue(request);
         } catch (ClientException e) {
-            CommonLogger.getCommonLogger(CacheClientConstant.modeName).errorf("getSecretValue error", e);
+            CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:getSecretValue", e);
             if (!judgeServerException(e)) {
                 throw new CacheSecretException(e);
             }
@@ -194,7 +194,7 @@ public class SecretCacheClient implements Closeable {
                     throw e;
                 }
             } catch (ClientException ce) {
-                CommonLogger.getCommonLogger(CacheClientConstant.modeName).errorf("getSecretValue error", e);
+                CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:getSecretValue", e);
                 throw new CacheSecretException(e);
             }
         }
@@ -217,7 +217,7 @@ public class SecretCacheClient implements Closeable {
         if (cacheSecretInfo != null) {
             cacheSecretStoreStrategy.storeSecret(cacheSecretInfo);
         }
-        CommonLogger.getCommonLogger(CacheClientConstant.modeName).infof("secretName:{} refresh success", secretName);
+        CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).infof("secretName:{} refresh success", secretName);
     }
 
     private void addRefreshTask(String secretName, Runnable runnable) throws CacheSecretException {
@@ -230,7 +230,7 @@ public class SecretCacheClient implements Closeable {
         }
         ScheduledFuture<?> schedule = scheduledThreadPoolExecutor.schedule(runnable, executeTime - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
         scheduledFutureMap.put(secretName, schedule);
-        CommonLogger.getCommonLogger(CacheClientConstant.modeName).infof("secretName:{} addRefreshTask success", secretName);
+        CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).infof("secretName:{} addRefreshTask success", secretName);
     }
 
     private void removeRefreshTask(String secretName) throws InterruptedException {
@@ -279,7 +279,7 @@ public class SecretCacheClient implements Closeable {
             try {
                 refresh(secretName, null);
             } catch (CacheSecretException e) {
-                CommonLogger.getCommonLogger(CacheClientConstant.modeName).errorf("refreshSecretTask error", e);
+                CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:refreshSecretTask", e);
                 if (judgeSkipRefreshException(e)) {
                     return;
                 }
@@ -287,7 +287,7 @@ public class SecretCacheClient implements Closeable {
             try {
                 addRefreshTask(secretName, this);
             } catch (CacheSecretException e) {
-                CommonLogger.getCommonLogger(CacheClientConstant.modeName).errorf("addRefreshTask error", e);
+                CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:addRefreshTask", e);
             }
         }
     }

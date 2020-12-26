@@ -100,7 +100,7 @@ public interface CacheClientConstant {
     /**
      * 模块名称
      */
-    String modeName = "CacheClient";
+    String MODE_NAME = "CacheClient";
 
     /**
      * 凭据文本数据类型
@@ -111,4 +111,29 @@ public interface CacheClientConstant {
      * 凭据二进制数据类型
      */
     String BINARY_DATA_TYPE = "binary";
+
+    /**
+     * 项目版本
+     */
+    String PROJECT_VERSION = "1.0-SNAPSHOT";
+    /**
+     * the user agent of secrets manager java
+     */
+    String USER_AGENT_OF_SECRETS_MANAGER_JAVA = "alibabacloud-secretsmanager-java";
+    /**
+     * the default expiration time duration of ram role
+     */
+    int DEFAULT_ROLE_SESSION_DURATION_SECONDS = 3600;
+    /**
+     * 环境变量region中endPoint key
+     */
+    String ENV_REGION_ENDPOINT_NAME_KEY = "endpoint";
+    /**
+     * 环境变量region中regionId key
+     */
+    String ENV_REGION_REGION_ID_NAME_KEY = "regionId";
+    /**
+     * 环境变量region中regionId key
+     */
+    String ENV_REGION_VPC_NAME_KEY = "vpc";
 }

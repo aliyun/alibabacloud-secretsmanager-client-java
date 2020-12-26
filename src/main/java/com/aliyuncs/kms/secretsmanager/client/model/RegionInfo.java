@@ -100,8 +100,10 @@ public class RegionInfo implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         RegionInfo that = (RegionInfo) o;
-        if (endpoint.equals(that.endpoint)) {
-            return true;
+        if (endpoint != null && that.endpoint != null) {
+            if (endpoint.equals(that.endpoint)){
+                return true;
+            }
         }
         return vpc == that.vpc &&
                 regionId.equals(that.regionId);

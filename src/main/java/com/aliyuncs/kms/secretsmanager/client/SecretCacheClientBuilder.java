@@ -123,7 +123,7 @@ public class SecretCacheClientBuilder implements CacheClientBuilder<SecretCacheC
      * @return builder对象本身
      */
     public SecretCacheClientBuilder withLogger(Logger logger) {
-        CommonLogger.registerLogger(CacheClientConstant.modeName, logger);
+        CommonLogger.registerLogger(CacheClientConstant.MODE_NAME, logger);
         return this;
     }
 
@@ -135,8 +135,8 @@ public class SecretCacheClientBuilder implements CacheClientBuilder<SecretCacheC
      */
     public SecretCacheClient build() throws CacheSecretException {
         buildSecretCacheClient();
-        if (!CommonLogger.isRegistered(CacheClientConstant.modeName)) {
-            CommonLogger.registerLogger(CacheClientConstant.modeName, LoggerFactory.getLogger(CacheClientConstant.modeName));
+        if (!CommonLogger.isRegistered(CacheClientConstant.MODE_NAME)) {
+            CommonLogger.registerLogger(CacheClientConstant.MODE_NAME, LoggerFactory.getLogger(CacheClientConstant.MODE_NAME));
         }
         if (secretCacheClient.secretClient == null) {
             secretCacheClient.secretClient = BaseSecretManagerClientBuilder.standard().build();
@@ -151,7 +151,7 @@ public class SecretCacheClientBuilder implements CacheClientBuilder<SecretCacheC
             secretCacheClient.cacheHook = new DefaultSecretCacheHook(secretCacheClient.stage);
         }
         secretCacheClient.init();
-        CommonLogger.getCommonLogger(CacheClientConstant.modeName).infof("SecretCacheClientBuilder build success");
+        CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).infof("SecretCacheClientBuilder build success");
         return secretCacheClient;
     }
 

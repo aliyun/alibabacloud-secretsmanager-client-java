@@ -38,6 +38,27 @@ public class SecretInfo implements Serializable, Cloneable {
      */
     private String createTime;
 
+    /**
+     * the secret type of the secret
+     */
+    private String secretType;
+    /**
+     * the automatic rotation of the secret
+     */
+    private String automaticRotation;
+    /**
+     * the extended config of the secret
+     */
+    private String extendedConfig;
+    /**
+     * the rotation interval time of the secret
+     */
+    private String rotationInterval;
+    /**
+     * the next rotation date of the secret
+     */
+    private String nextRotationDate;
+
     public SecretInfo() {
         // do nothing
     }
@@ -50,6 +71,19 @@ public class SecretInfo implements Serializable, Cloneable {
         this.createTime = createTime;
     }
 
+    public SecretInfo(String secretName, String versionId, String secretValue, String secretDataType, String createTime, String secretType, String automaticRotation, String extendedConfig, String rotationInterval, String nextRotationDate) {
+        this.secretName = secretName;
+        this.versionId = versionId;
+        this.secretValue = secretValue;
+        this.secretDataType = secretDataType;
+        this.createTime = createTime;
+        this.secretType = secretType;
+        this.automaticRotation = automaticRotation;
+        this.extendedConfig = extendedConfig;
+        this.rotationInterval = rotationInterval;
+        this.nextRotationDate = nextRotationDate;
+    }
+
     public SecretInfo(String secretName, String versionId, String secretValue, ByteBuffer secretValueByteBuffer, String secretDataType, String createTime) {
         this.secretName = secretName;
         this.versionId = versionId;
@@ -57,6 +91,20 @@ public class SecretInfo implements Serializable, Cloneable {
         this.secretValueByteBuffer = secretValueByteBuffer;
         this.secretDataType = secretDataType;
         this.createTime = createTime;
+    }
+
+    public SecretInfo(String secretName, String versionId, String secretValue, ByteBuffer secretValueByteBuffer, String secretDataType, String createTime, String secretType, String automaticRotation, String extendedConfig, String rotationInterval, String nextRotationDate) {
+        this.secretName = secretName;
+        this.versionId = versionId;
+        this.secretValue = secretValue;
+        this.secretValueByteBuffer = secretValueByteBuffer;
+        this.secretDataType = secretDataType;
+        this.createTime = createTime;
+        this.secretType = secretType;
+        this.automaticRotation = automaticRotation;
+        this.extendedConfig = extendedConfig;
+        this.rotationInterval = rotationInterval;
+        this.nextRotationDate = nextRotationDate;
     }
 
     public String getSecretName() {
@@ -99,6 +147,37 @@ public class SecretInfo implements Serializable, Cloneable {
         this.createTime = createTime;
     }
 
+    public String getRotationInterval() {
+        return this.rotationInterval;
+    }
+    public void setRotationInterval(String rotationInterval) {
+        this.rotationInterval = rotationInterval;
+    }
+    public String getNextRotationDate() {
+        return this.nextRotationDate;
+    }
+    public void setNextRotationDate(String nextRotationDate) {
+        this.nextRotationDate = nextRotationDate;
+    }
+    public String getSecretType() {
+        return this.secretType;
+    }
+    public void setSecretType(String secretType) {
+        this.secretType = secretType;
+    }
+    public String getAutomaticRotation() {
+        return this.automaticRotation;
+    }
+    public void setAutomaticRotation(String automaticRotation) {
+        this.automaticRotation = automaticRotation;
+    }
+    public String getExtendedConfig() {
+        return this.extendedConfig;
+    }
+    public void setExtendedConfig(String extendedConfig) {
+        this.extendedConfig = extendedConfig;
+    }
+
     public ByteBuffer getSecretValueByteBuffer() {
         if (CacheClientConstant.BINARY_DATA_TYPE.equals(secretDataType)) {
             return ByteBufferUtils.convertStringToByte(secretValue);
@@ -120,9 +199,14 @@ public class SecretInfo implements Serializable, Cloneable {
         return "SecretInfo{" +
                 "secretName='" + secretName + '\'' +
                 ", versionId='" + versionId + '\'' +
-                ", secretValue='" + "***" + '\'' +
+                ", secretValue='***\'" +
                 ", secretDataType='" + secretDataType + '\'' +
                 ", createTime='" + createTime + '\'' +
+                ", secretType='" + secretType + '\'' +
+                ", automaticRotation='" + automaticRotation + '\'' +
+                ", extendedConfig='" + extendedConfig + '\'' +
+                ", rotationInterval='" + rotationInterval + '\'' +
+                ", nextRotationDate='" + nextRotationDate + '\'' +
                 '}';
     }
 }

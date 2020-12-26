@@ -65,7 +65,7 @@ public class FileCacheSecretStoreStrategy implements CacheSecretStoreStrategy {
 
     @Override
     public void storeSecret(CacheSecretInfo cacheSecretInfo) throws CacheSecretException {
-	CacheSecretInfo memoryCacheSecretInfo = cacheSecretInfo.clone();
+	    CacheSecretInfo memoryCacheSecretInfo = cacheSecretInfo.clone();
         CacheSecretInfo fileCacheSecretInfo = cacheSecretInfo.clone();
         SecretInfo secretInfo = fileCacheSecretInfo.getSecretInfo();
         String secretValue = secretInfo.getSecretValue();
@@ -92,9 +92,11 @@ public class FileCacheSecretStoreStrategy implements CacheSecretStoreStrategy {
         String fileName = (JSON_FILE_NAME_PREFIX + CacheClientConstant.STAGE_ACS_CURRENT + JSON_FILE_NAME_SUFFIX).toLowerCase();
         String cacheSecretPath = this.cacheSecretPath + File.separatorChar + secretName;
         CacheSecretInfo cacheSecretInfo = JsonIOUtils.readObject(cacheSecretPath, fileName, CacheSecretInfo.class);
-        SecretInfo secretInfo = cacheSecretInfo.getSecretInfo();
-        secretInfo.setSecretValue(decryptSecretVale(secretInfo.getSecretValue()));
-        cacheSecretInfoMap.put(secretInfo.getSecretName(), cacheSecretInfo);
+        if (cacheSecretInfo != null) {
+            SecretInfo secretInfo = cacheSecretInfo.getSecretInfo();
+            secretInfo.setSecretValue(decryptSecretVale(secretInfo.getSecretValue()));
+            cacheSecretInfoMap.put(secretInfo.getSecretName(), cacheSecretInfo);
+        }
         return cacheSecretInfo;
     }
 

@@ -110,7 +110,7 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                     try {
                         return getSecretValue(regionInfos.get(i), req);
                     } catch (ClientException e) {
-                        CommonLogger.getCommonLogger(CacheClientConstant.modeName).errorf("getSecretValue error", e);
+                        CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:getSecretValue", e);
                         if (!BackoffUtils.judgeNeedBackoff(e)) {
                             throw e;
                         }
@@ -133,10 +133,10 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                     }
                 }
             } catch (InterruptedException e) {
-                CommonLogger.getCommonLogger(CacheClientConstant.modeName).errorf("await retryGetSecretValueTask countDown error", e);
+                CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:retryGetSecretValueTask", e);
                 throw new ClientException(e);
             } catch (ExecutionException e) {
-                CommonLogger.getCommonLogger(CacheClientConstant.modeName).errorf("retryGetSecretValueTask future get error", e);
+                CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:retryGetSecretValueTask", e);
                 throw new ClientException(e);
             }
             return getSecretValueResponse;
@@ -180,13 +180,16 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                 HttpClientConfig clientConfig = HttpClientConfig.getDefault();
                 clientConfig.setIgnoreSSLCerts(true);
                 profile.setHttpClientConfig(clientConfig);
-                clientMap.put(regionInfo.getRegionId(), new DefaultAcsClient(profile, provider));
+                DefaultAcsClient acsClient = new DefaultAcsClient(profile, provider);
+                acsClient.appendUserAgent(UserAgentManager.getUserAgent(), UserAgentManager.getProjectVersion());
+                clientMap.put(regionInfo.getRegionId(), acsClient);
             }
             return clientMap.get(regionInfo.getRegionId());
         }
 
         public void init() throws CacheSecretException {
             initEnv();
+            UserAgentManager.registerUserAgent(CacheClientConstant.USER_AGENT_OF_SECRETS_MANAGER_JAVA, 0, CacheClientConstant.PROJECT_VERSION);
             if (backoffStrategy == null) {
                 backoffStrategy = new FullJitterBackoffStrategy();
             }
@@ -200,12 +203,12 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                 String regionJson = envMap.get(CacheClientConstant.ENV_CACHE_CLIENT_REGION_ID_KEY);
                 checkEnvParamNull(regionJson, CacheClientConstant.ENV_CACHE_CLIENT_REGION_ID_KEY);
                 try {
-                    List<Map<String, Object>> list = new Gson().fromJson(regionJson, List.class);
-                    for (Map<String, Object> map : list) {
+                    List<Map<String, Object>> configList = new Gson().fromJson(regionJson, List.class);
+                    for (Map<String, Object> map : configList) {
                         RegionInfo regionInfo = new RegionInfo();
-                        regionInfo.setEndpoint(TypeUtils.parseString(map.get("endPoint")));
-                        regionInfo.setRegionId(TypeUtils.parseString(map.get("regionId")));
-                        regionInfo.setVpc(TypeUtils.parseBoolean(map.get("vpc")));
+                        regionInfo.setRegionId(TypeUtils.parseString(map.get(CacheClientConstant.ENV_REGION_REGION_ID_NAME_KEY)));
+                        regionInfo.setEndpoint(TypeUtils.parseString(map.get(CacheClientConstant.ENV_REGION_ENDPOINT_NAME_KEY)));
+                        regionInfo.setVpc(TypeUtils.parseBoolean(map.get(CacheClientConstant.ENV_REGION_VPC_NAME_KEY)));
                         regionInfos.add(regionInfo);
                     }
                 } catch (Exception e) {
@@ -299,7 +302,7 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                 try {
                     return getSecretValue(regionInfo, req);
                 } catch (ClientException e) {
-                    CommonLogger.getCommonLogger(CacheClientConstant.modeName).errorf("getSecretValue error", e);
+                    CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("getSecretValue error", e);
                     if (!BackoffUtils.judgeNeedBackoff(e)) {
                         throw e;
                     }
@@ -313,18 +316,17 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
         List<RegionInfoExtend> regionInfoExtends = new ArrayList<>();
         for (RegionInfo regionInfo : regionInfos) {
             long start = System.currentTimeMillis();
-            boolean isReachable;
+            double pingDelay;
             if (!StringUtils.isEmpty(regionInfo.getEndpoint())) {
-                isReachable = PingUtils.ping(regionInfo.getEndpoint());
+                pingDelay = PingUtils.ping(regionInfo.getEndpoint());
             } else if (regionInfo.getVpc()) {
-                isReachable = PingUtils.ping(KmsEndpointUtils.getVPCEndpoint(regionInfo.getRegionId()));
+                pingDelay = PingUtils.ping(KmsEndpointUtils.getVPCEndpoint(regionInfo.getRegionId()));
             } else {
-                isReachable = PingUtils.ping(KmsEndpointUtils.getEndPoint(regionInfo.getRegionId()));
+                pingDelay = PingUtils.ping(KmsEndpointUtils.getEndPoint(regionInfo.getRegionId()));
             }
-            long escaped = System.currentTimeMillis() - start;
             RegionInfoExtend regionInfoExtend = new RegionInfoExtend(regionInfo);
-            regionInfoExtend.setReachable(isReachable);
-            regionInfoExtend.setEscaped(escaped);
+            regionInfoExtend.setReachable(pingDelay >= 0);
+            regionInfoExtend.setEscaped(pingDelay >= 0 ? pingDelay : Double.MAX_VALUE);
             regionInfoExtends.add(regionInfoExtend);
         }
         return regionInfoExtends.stream().sorted(Comparator.comparing((RegionInfoExtend regionInfoExtend) -> !regionInfoExtend.getReachable())
@@ -336,7 +338,7 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
     class RegionInfoExtend {
 
         private boolean reachable;
-        private long escaped;
+        private double escaped;
         private String regionId;
         private boolean vpc;
         private String endpoint;
@@ -367,11 +369,11 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
             this.reachable = reachable;
         }
 
-        public long getEscaped() {
+        public double getEscaped() {
             return this.escaped;
         }
 
-        public void setEscaped(long escaped) {
+        public void setEscaped(double escaped) {
             this.escaped = escaped;
         }
     }

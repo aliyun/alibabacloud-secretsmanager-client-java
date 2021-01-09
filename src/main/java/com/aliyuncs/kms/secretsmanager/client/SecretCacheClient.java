@@ -178,6 +178,7 @@ public class SecretCacheClient implements Closeable {
         GetSecretValueRequest request = new GetSecretValueRequest();
         request.setSecretName(secretName);
         request.setVersionStage(stage);
+        request.setFetchExtendedConfig(true);
         GetSecretValueResponse resp;
         try {
             resp = secretClient.getSecretValue(request);

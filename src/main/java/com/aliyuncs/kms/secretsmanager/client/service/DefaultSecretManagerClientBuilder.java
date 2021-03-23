@@ -111,7 +111,7 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                         return getSecretValue(regionInfos.get(i), req);
                     } catch (ClientException e) {
                         CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:getSecretValue", e);
-                        if (!BackoffUtils.judgeNeedBackoff(e)) {
+                        if (!BackoffUtils.judgeNeedRecoveryException(e)) {
                             throw e;
                         }
                         count = new CountDownLatch(1);
@@ -126,20 +126,24 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
             try {
                 count.await(REQUEST_WAITING_TIME, TimeUnit.MILLISECONDS);
                 for (Future<GetSecretValueResponse> future : futures) {
-                    if (!future.isDone()) {
-                        future.cancel(true);
-                    } else {
-                        getSecretValueResponse = future.get();
+                    try {
+                        if (!future.isDone()) {
+                            future.cancel(true);
+                        } else {
+                            getSecretValueResponse = future.get();
+                            if (getSecretValueResponse != null) {
+                                return getSecretValueResponse;
+                            }
+                        }
+                    } catch (InterruptedException | ExecutionException e) {
+                        CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:asyncGetSecretValue", e);
                     }
                 }
             } catch (InterruptedException e) {
                 CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:retryGetSecretValueTask", e);
                 throw new ClientException(e);
-            } catch (ExecutionException e) {
-                CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:retryGetSecretValueTask", e);
-                throw new ClientException(e);
             }
-            return getSecretValueResponse;
+            throw new ClientException(CacheClientConstant.SDK_READ_TIMEOUT);
         }
 
         @Override
@@ -315,7 +319,6 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
     private List<RegionInfo> sortRegionInfos(List<RegionInfo> regionInfos) {
         List<RegionInfoExtend> regionInfoExtends = new ArrayList<>();
         for (RegionInfo regionInfo : regionInfos) {
-            long start = System.currentTimeMillis();
             double pingDelay;
             if (!StringUtils.isEmpty(regionInfo.getEndpoint())) {
                 pingDelay = PingUtils.ping(regionInfo.getEndpoint());

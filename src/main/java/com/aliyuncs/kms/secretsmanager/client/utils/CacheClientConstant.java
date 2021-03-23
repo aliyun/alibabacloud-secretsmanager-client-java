@@ -116,24 +116,39 @@ public interface CacheClientConstant {
      * 项目版本
      */
     String PROJECT_VERSION = "1.0-SNAPSHOT";
+
     /**
      * the user agent of secrets manager java
      */
     String USER_AGENT_OF_SECRETS_MANAGER_JAVA = "alibabacloud-secretsmanager-java";
+
     /**
      * the default expiration time duration of ram role
      */
     int DEFAULT_ROLE_SESSION_DURATION_SECONDS = 3600;
+
     /**
      * 环境变量region中endPoint key
      */
     String ENV_REGION_ENDPOINT_NAME_KEY = "endpoint";
+
     /**
      * 环境变量region中regionId key
      */
     String ENV_REGION_REGION_ID_NAME_KEY = "regionId";
+
     /**
      * 环境变量region中regionId key
      */
     String ENV_REGION_VPC_NAME_KEY = "vpc";
+
+    /**
+     * KMS服务Socket连接超时错误码
+     */
+    String SDK_READ_TIMEOUT = "SDK.ReadTimeout";
+
+    /**
+     * KMS服务无法连接错误码
+     */
+    String SDK_SERVER_UNREACHABLE = "SDK.ServerUnreachable";
 }

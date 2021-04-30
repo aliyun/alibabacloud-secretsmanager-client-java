@@ -118,7 +118,11 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                         finished = new AtomicInteger(regionInfos.size());
                     }
                 }
-                Future<GetSecretValueResponse> future = pool.submit(new RetryGetSecretValueTask(req, regionInfos.get(i), count, finished));
+                GetSecretValueRequest request = new GetSecretValueRequest();
+                request.setSecretName(req.getSecretName());
+                request.setVersionStage(req.getVersionStage());
+                request.setFetchExtendedConfig(true);
+                Future<GetSecretValueResponse> future = pool.submit(new RetryGetSecretValueTask(request, regionInfos.get(i), count, finished));
                 futures.add(future);
             }
 
@@ -143,7 +147,7 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                 CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:retryGetSecretValueTask", e);
                 throw new ClientException(e);
             }
-            throw new ClientException(CacheClientConstant.SDK_READ_TIMEOUT);
+            throw new ClientException(CacheClientConstant.SDK_READ_TIMEOUT, String.format("refreshSecretTask fail with secretName[%s]", req.getSecretName()));
         }
 
         @Override
@@ -284,9 +288,12 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
             @Override
             public GetSecretValueResponse call() throws Exception {
                 try {
-                    GetSecretValueResponse resp = retryGetSecretValue(req, regionInfo, 0);
+                    GetSecretValueResponse resp = retryGetSecretValue(req, regionInfo);
                     countDownLatch.countDown();
                     return resp;
+                } catch (Exception e) {
+                    CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:retryGetSecretValueRun", e);
+                    return null;
                 } finally {
                     if (finished.decrementAndGet() == 0) {
                         countDownLatch.countDown();
@@ -294,24 +301,27 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                 }
             }
 
-            private GetSecretValueResponse retryGetSecretValue(GetSecretValueRequest req, RegionInfo regionInfo, int retryTimes) throws ClientException {
-                long waitTimeExponential = backoffStrategy.getWaitTimeExponential(retryTimes);
-                if (waitTimeExponential < 0) {
-                    throw new ClientException("Times limit exceeded");
-                }
-                try {
-                    Thread.sleep(waitTimeExponential);
-                } catch (InterruptedException ignore) {
-                }
-                try {
-                    return getSecretValue(regionInfo, req);
-                } catch (ClientException e) {
-                    CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("getSecretValue error", e);
-                    if (!BackoffUtils.judgeNeedBackoff(e)) {
-                        throw e;
+            private GetSecretValueResponse retryGetSecretValue(GetSecretValueRequest req, RegionInfo regionInfo) throws ClientException {
+                int retryTimes = 0;
+                while (true) {
+                    long waitTimeExponential = backoffStrategy.getWaitTimeExponential(retryTimes);
+                    if (waitTimeExponential < 0) {
+                        throw new ClientException(CacheClientConstant.SDK_READ_TIMEOUT, "Times limit exceeded");
                     }
+                    try {
+                        Thread.sleep(waitTimeExponential);
+                    } catch (InterruptedException ignore) {
+                    }
+                    try {
+                        return getSecretValue(regionInfo, req);
+                    } catch (ClientException e) {
+                        CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:getSecretValue", e);
+                        if (!BackoffUtils.judgeNeedRecoveryException(e)) {
+                            throw e;
+                        }
+                    }
+                    retryTimes++;
                 }
-                return retryGetSecretValue(req, regionInfo, retryTimes + 1);
             }
         }
     }

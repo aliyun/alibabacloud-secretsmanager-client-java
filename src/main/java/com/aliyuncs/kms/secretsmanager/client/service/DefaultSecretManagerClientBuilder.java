@@ -146,6 +146,10 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
             } catch (InterruptedException e) {
                 CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:retryGetSecretValueTask", e);
                 throw new ClientException(e);
+            } finally {
+                if (count.getCount() > 0) {
+                    count.countDown();
+                }
             }
             throw new ClientException(CacheClientConstant.SDK_READ_TIMEOUT, String.format("refreshSecretTask fail with secretName[%s]", req.getSecretName()));
         }
@@ -304,6 +308,9 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
             private GetSecretValueResponse retryGetSecretValue(GetSecretValueRequest req, RegionInfo regionInfo) throws ClientException {
                 int retryTimes = 0;
                 while (true) {
+                    if (countDownLatch.getCount() == 0) {
+                        return null;
+                    }
                     long waitTimeExponential = backoffStrategy.getWaitTimeExponential(retryTimes);
                     if (waitTimeExponential < 0) {
                         throw new ClientException(CacheClientConstant.SDK_READ_TIMEOUT, "Times limit exceeded");

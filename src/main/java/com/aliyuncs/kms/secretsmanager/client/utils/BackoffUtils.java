@@ -33,4 +33,17 @@ public class BackoffUtils {
         }
         return false;
     }
+
+    /**
+     * 根据Client异常判断是否进行容灾重试
+     *
+     * @param e 指定Client异常
+     * @return
+     */
+    public static boolean judgeNeedRecoveryException(ClientException e) {
+        if (CacheClientConstant.SDK_READ_TIMEOUT.equals(e.getErrCode()) || CacheClientConstant.SDK_SERVER_UNREACHABLE.equals(e.getErrCode()) || judgeNeedBackoff(e)) {
+            return true;
+        }
+        return false;
+    }
 }

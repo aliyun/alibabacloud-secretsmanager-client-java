@@ -184,7 +184,7 @@ public class SecretCacheClient implements Closeable {
             resp = secretClient.getSecretValue(request);
         } catch (ClientException e) {
             CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:getSecretValue", e);
-            if (!judgeServerException(e)) {
+            if (!BackoffUtils.judgeNeedRecoveryException(e)) {
                 throw new CacheSecretException(e);
             }
             try {
@@ -281,9 +281,6 @@ public class SecretCacheClient implements Closeable {
                 refresh(secretName, null);
             } catch (CacheSecretException e) {
                 CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:refreshSecretTask", e);
-                if (judgeSkipRefreshException(e)) {
-                    return;
-                }
             }
             try {
                 addRefreshTask(secretName, this);

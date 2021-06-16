@@ -34,7 +34,7 @@ The recommended way to use the Aliyun Secrets Manager Client for Java in your pr
 <dependency>
     <groupId>com.aliyun</groupId>
     <artifactId>alibabacloud-secretsmanager-client</artifactId>
-    <version>1.1.3</version>
+    <version>1.1.5</version>
 </dependency>
 ```
 

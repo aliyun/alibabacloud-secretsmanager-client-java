@@ -92,10 +92,6 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
     }
 
     class DefaultSecretManagerClient implements SecretManagerClient {
-        /**
-         * 请求等待时间
-         */
-        private final static long REQUEST_WAITING_TIME = 10 * 60 * 1000L;
 
         private ScheduledThreadPoolExecutor pool = new ScheduledThreadPoolExecutor(5);
         private Map<String, DefaultAcsClient> clientMap = new HashMap<>();
@@ -128,7 +124,7 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
 
             GetSecretValueResponse getSecretValueResponse = null;
             try {
-                count.await(REQUEST_WAITING_TIME, TimeUnit.MILLISECONDS);
+                count.await(CacheClientConstant.REQUEST_WAITING_TIME, TimeUnit.MILLISECONDS);
                 for (Future<GetSecretValueResponse> future : futures) {
                     try {
                         if (!future.isDone()) {

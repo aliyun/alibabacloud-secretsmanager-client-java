@@ -7,7 +7,7 @@
     <groupId>com.aliyun</groupId>
     <artifactId>alibabacloud-secretsmanager-client</artifactId>
     <packaging>jar</packaging>
-    <version>1.1.4</version>
+    <version>1.1.5</version>
     <name>alibabacloud-secretsmanager-client</name>
     <url>http://www.aliyun.com</url>
     <description>Alibabacloud Secrets Manager Client for Java
@@ -32,7 +32,7 @@
             <groupId>com.aliyun</groupId>
             <artifactId>aliyun-java-sdk-core</artifactId>
             <optional>true</optional>
-            <version>[4.3.2,5.0.0)</version>
+            <version>4.5.17</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>

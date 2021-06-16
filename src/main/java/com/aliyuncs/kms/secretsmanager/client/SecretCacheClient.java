@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.*;
 
 public class SecretCacheClient implements Closeable {
@@ -32,6 +33,7 @@ public class SecretCacheClient implements Closeable {
 
     private final ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(5);
     private final Map<String, ScheduledFuture> scheduledFutureMap = new ConcurrentHashMap<>();
+    private final Map<String, Long> nextExecuteTimeMap = new ConcurrentHashMap<>();
 
     /**
      * 凭据Version Stage
@@ -64,12 +66,12 @@ public class SecretCacheClient implements Closeable {
             throw new IllegalArgumentException("the argument[secretName] must not be null");
         }
         CacheSecretInfo cacheSecretInfo = this.cacheSecretStoreStrategy.getCacheSecretInfo(secretName);
-        if (cacheSecretInfo != null && !judgeCacheExpire(cacheSecretInfo)) {
+        if (checkCacheSecretInfoIsValid(cacheSecretInfo)) {
             return cacheHook.get(cacheSecretInfo);
         } else {
             synchronized (secretName.intern()) {
                 cacheSecretInfo = this.cacheSecretStoreStrategy.getCacheSecretInfo(secretName);
-                if (cacheSecretInfo != null && !judgeCacheExpire(cacheSecretInfo)) {
+                if (checkCacheSecretInfoIsValid(cacheSecretInfo)) {
                     return cacheHook.get(cacheSecretInfo);
                 } else {
                     SecretInfo secretInfo = getSecretValue(secretName);
@@ -129,20 +131,28 @@ public class SecretCacheClient implements Closeable {
     }
 
     private boolean refreshNow(final String secretName, SecretInfo secretInfo) throws InterruptedException {
+        boolean executeResult = true;
         synchronized (secretName.intern()) {
             try {
                 refresh(secretName, secretInfo);
+            } catch (Throwable e) {
+                CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:refresh", e);
+                executeResult = false;
+            }
+            try {
                 removeRefreshTask(secretName);
+            } catch (Throwable e) {
+                CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:removeRefreshTask", e);
+                executeResult = false;
+            }
+            try {
                 addRefreshTask(secretName, new RefreshSecretTask(secretName));
-            } catch (InterruptedException e) {
-                CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:refreshNow", e);
-                throw e;
-            } catch (Exception e) {
-                CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:refreshNow", e);
-                return false;
+            } catch (Throwable e) {
+                CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:addRefreshTask", e);
+                executeResult = false;
             }
         }
-        return true;
+        return executeResult;
     }
 
     protected void init() throws CacheSecretException {
@@ -162,7 +172,7 @@ public class SecretCacheClient implements Closeable {
             }
             storeAndRefresh(secretName, secretInfo);
         }
-
+        new Thread(new MonitorRefreshSecretTask()).start();
         CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).infof("secretCacheClient init success");
     }
 
@@ -229,6 +239,7 @@ public class SecretCacheClient implements Closeable {
             executeTime = refreshSecretStrategy.getNextExecuteTime(secretName, secretTTLMap.getOrDefault(secretName, DEFAULT_TTL), refreshTimestamp);
             executeTime = Math.max(executeTime, System.currentTimeMillis());
         }
+        nextExecuteTimeMap.put(secretName, executeTime);
         ScheduledFuture<?> schedule = scheduledThreadPoolExecutor.schedule(runnable, executeTime - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
         scheduledFutureMap.put(secretName, schedule);
         CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).infof("secretName:{} addRefreshTask success", secretName);
@@ -238,6 +249,23 @@ public class SecretCacheClient implements Closeable {
         if (scheduledFutureMap.get(secretName) != null) {
             scheduledThreadPoolExecutor.remove((RunnableScheduledFuture<?>) scheduledFutureMap.get(secretName));
         }
+    }
+
+    private boolean checkCacheSecretInfoIsValid(CacheSecretInfo cacheSecretInfo) {
+        if (cacheSecretInfo != null && !judgeCacheExpire(cacheSecretInfo)) {
+            return checkSecretValueIsEmpty(cacheSecretInfo);
+        }
+        return false;
+    }
+
+    private boolean checkSecretValueIsEmpty(CacheSecretInfo cacheSecretInfo) {
+        if (cacheSecretInfo != null) {
+            SecretInfo secretInfo = cacheSecretInfo.getSecretInfo();
+            if (secretInfo != null && !StringUtils.isEmpty(secretInfo.getSecretValue())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean judgeServerException(ClientException e) {
@@ -279,13 +307,54 @@ public class SecretCacheClient implements Closeable {
         public void run() {
             try {
                 refresh(secretName, null);
-            } catch (CacheSecretException e) {
+            } catch (Throwable e) {
                 CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:refreshSecretTask", e);
             }
             try {
                 addRefreshTask(secretName, this);
-            } catch (CacheSecretException e) {
+            } catch (Throwable e) {
                 CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:addRefreshTask", e);
+            }
+        }
+    }
+
+    class MonitorRefreshSecretTask implements Runnable {
+        @Override
+        public void run() {
+            while (true) {
+                Set<String> secretNames = nextExecuteTimeMap.keySet();
+                if (secretNames != null && !secretNames.isEmpty()) {
+                    for (String secretName : secretNames) {
+                        try {
+                            CacheSecretInfo cacheSecretInfo = cacheSecretStoreStrategy.getCacheSecretInfo(secretName);
+                            if (cacheSecretInfo != null) {
+                                Long nextExecuteTime = nextExecuteTimeMap.get(secretName);
+                                if (System.currentTimeMillis() > nextExecuteTime + CacheClientConstant.REQUEST_WAITING_TIME) {
+                                    CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).warnf("MonitorRefreshSecretTask secret is expired, secretName={}", secretName);
+                                    try {
+                                        refreshNow(secretName);
+                                    } catch (Throwable e) {
+                                        CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("MonitorRefreshSecretTask refreshNow error, secretName={}", secretName, e);
+                                    }
+                                }
+                            } else {
+                                CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).warnf("MonitorRefreshSecretTask can not get cache secret, secretName={}", secretName);
+                                try {
+                                    refreshNow(secretName);
+                                } catch (Throwable e) {
+                                    CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("MonitorRefreshSecretTask refreshNow error, secretName={}", secretName, e);
+                                }
+                            }
+                        } catch (Throwable e) {
+                            CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("MonitorRefreshSecretTask error, secretName={}", secretName, e);
+                        }
+                    }
+                }
+                try {
+                    Thread.sleep(CacheClientConstant.MONITOR_INTERVAL);
+                } catch (Throwable e) {
+                    CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("MonitorRefreshSecretTask sleep error", e);
+                }
             }
         }
     }

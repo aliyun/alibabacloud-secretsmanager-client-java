@@ -151,4 +151,14 @@ public interface CacheClientConstant {
      * KMS服务无法连接错误码
      */
     String SDK_SERVER_UNREACHABLE = "SDK.ServerUnreachable";
+
+    /**
+     * 请求等待时间
+     */
+    long REQUEST_WAITING_TIME = 10 * 60 * 1000L;
+
+    /**
+     * 监控间隔时间
+     */
+    long MONITOR_INTERVAL = 5 * 60 * 1000;
 }

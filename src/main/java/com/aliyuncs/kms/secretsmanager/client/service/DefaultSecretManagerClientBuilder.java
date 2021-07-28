@@ -259,6 +259,13 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                         checkEnvParamNull(roleName, CacheClientConstant.ENV_CREDENTIALS_ROLE_NAME_KEY);
                         provider = new InstanceProfileCredentialsProvider(roleName);
                         break;
+                    case "client_key":
+                        String password = envMap.get(CacheClientConstant.ENV_CLIENT_KEY_PASSWORD_NAME_KEY);
+                        String privateKeyPath = envMap.get(CacheClientConstant.ENV_CLIENT_KEY_PRIVATE_KEY_PATH_NAME_KEY);
+                        checkEnvParamNull(password, CacheClientConstant.ENV_CLIENT_KEY_PASSWORD_NAME_KEY);
+                        checkEnvParamNull(privateKeyPath, CacheClientConstant.ENV_CLIENT_KEY_PRIVATE_KEY_PATH_NAME_KEY);
+                        provider = CredentialsProviderUtils.getCredentialsProvider(privateKeyPath, password);
+                        break;
                     default:
                         throw new IllegalArgumentException(String.format("env param[%s] is illegal", CacheClientConstant.ENV_CREDENTIALS_TYPE_KEY));
                 }

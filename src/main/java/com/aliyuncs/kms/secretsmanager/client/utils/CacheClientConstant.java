@@ -115,7 +115,7 @@ public interface CacheClientConstant {
     /**
      * 项目版本
      */
-    String PROJECT_VERSION = "1.0-SNAPSHOT";
+    String PROJECT_VERSION = "1.0.6";
 
     /**
      * the user agent of secrets manager java
@@ -161,4 +161,20 @@ public interface CacheClientConstant {
      * 监控间隔时间
      */
     long MONITOR_INTERVAL = 5 * 60 * 1000;
+    /**
+     * 环境变量credentials_client_key_password key
+     */
+    String ENV_CLIENT_KEY_PASSWORD_NAME_KEY = "client_key_password";
+    /**
+     * 环境变量credentials_client_key_private_key_path key
+     */
+    String ENV_CLIENT_KEY_PRIVATE_KEY_PATH_NAME_KEY = "client_key_private_key_path";
+    /**
+     * credentials配置文件名称
+     */
+    String CREDENTIALS_PROPERTIES_CONFIG_NAME = "secretsmanager.properties";
+    /**
+     * credentials配置中属性名称secret_names
+     */
+    String PROPERTIES_SECRET_NAMES_KEY = "secret_names";
 }

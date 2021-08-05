@@ -164,7 +164,7 @@ public interface CacheClientConstant {
     /**
      * 环境变量credentials_client_key_password key
      */
-    String ENV_CLIENT_KEY_PASSWORD_NAME_KEY = "client_key_password";
+    String DEFAULT_ENV_CLIENT_KEY_PASSWORD_NAME = "client_key_password";
     /**
      * 环境变量credentials_client_key_private_key_path key
      */
@@ -177,4 +177,12 @@ public interface CacheClientConstant {
      * credentials配置中属性名称secret_names
      */
     String PROPERTIES_SECRET_NAMES_KEY = "secret_names";
+    /**
+     * client_key_password_from_env_variable key
+     */
+    String ENV_CLIENT_KEY_PASSWORD_FROM_ENV_VARIABLE_NAME = "client_key_password_from_env_variable";
+    /**
+     * client_key_password_from_file_path key
+     */
+    String ENV_CLIENT_KEY_PASSWORD_FROM_FILE_PATH_NAME = "client_key_password_from_file_path";
 }

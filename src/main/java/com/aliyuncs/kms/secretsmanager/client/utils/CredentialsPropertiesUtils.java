@@ -72,8 +72,9 @@ public class CredentialsPropertiesUtils {
                     credentialsProvider = CredentialsProviderUtils.withEcsRamRole(roleName);
                     break;
                 case "client_key":
-                    String password = properties.getProperty(CacheClientConstant.ENV_CLIENT_KEY_PASSWORD_NAME_KEY);
+                    String password = ClientKeyUtils.getPassword(properties);
                     String privateKeyPath = properties.getProperty(CacheClientConstant.ENV_CLIENT_KEY_PRIVATE_KEY_PATH_NAME_KEY);
+                    checkConfigParamNull(privateKeyPath, CacheClientConstant.ENV_CLIENT_KEY_PRIVATE_KEY_PATH_NAME_KEY);
                     credentialsProvider = CredentialsProviderUtils.getCredentialsProvider(privateKeyPath, password);
                     break;
                 default:

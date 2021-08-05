@@ -260,9 +260,8 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                         provider = new InstanceProfileCredentialsProvider(roleName);
                         break;
                     case "client_key":
-                        String password = envMap.get(CacheClientConstant.ENV_CLIENT_KEY_PASSWORD_NAME_KEY);
+                        String password = ClientKeyUtils.getPassword(envMap);
                         String privateKeyPath = envMap.get(CacheClientConstant.ENV_CLIENT_KEY_PRIVATE_KEY_PATH_NAME_KEY);
-                        checkEnvParamNull(password, CacheClientConstant.ENV_CLIENT_KEY_PASSWORD_NAME_KEY);
                         checkEnvParamNull(privateKeyPath, CacheClientConstant.ENV_CLIENT_KEY_PRIVATE_KEY_PATH_NAME_KEY);
                         provider = CredentialsProviderUtils.getCredentialsProvider(privateKeyPath, password);
                         break;

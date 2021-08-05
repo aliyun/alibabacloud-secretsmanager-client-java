@@ -36,6 +36,7 @@
 * 通过使用Client Key访问KMS, 你必须要设置如下系统环境变量 (linux):
 
 	- export credentials\_type=client\_key
-	- export client\_key\_password=\<your client key private key password>
+	- export client\_key\_password\_from\_env\_variable=\<your client key private key password from environment variable>
+	- export client\_key\_password\_from\_file\_path=\<your client key private key password from file>
 	- export client\_key\_private\_key\_path=\<your client key private key file path>
 	- export cache\_client\_region\_id=[{"regionId":"\<your region id>"}]

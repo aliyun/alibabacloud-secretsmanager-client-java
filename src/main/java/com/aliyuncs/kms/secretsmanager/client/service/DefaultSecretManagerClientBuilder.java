@@ -9,6 +9,7 @@ import com.aliyuncs.http.HttpClientConfig;
 import com.aliyuncs.kms.model.v20160120.GetSecretValueRequest;
 import com.aliyuncs.kms.model.v20160120.GetSecretValueResponse;
 import com.aliyuncs.kms.secretsmanager.client.exception.CacheSecretException;
+import com.aliyuncs.kms.secretsmanager.client.model.CredentialsProperties;
 import com.aliyuncs.kms.secretsmanager.client.model.RegionInfo;
 import com.aliyuncs.kms.secretsmanager.client.utils.*;
 import com.aliyuncs.profile.DefaultProfile;
@@ -196,6 +197,7 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
         }
 
         public void init() throws CacheSecretException {
+            initProperties();
             initEnv();
             UserAgentManager.registerUserAgent(CacheClientConstant.USER_AGENT_OF_SECRETS_MANAGER_JAVA, 0, CacheClientConstant.PROJECT_VERSION);
             if (backoffStrategy == null) {
@@ -207,22 +209,6 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
 
         private void initEnv() throws CacheSecretException {
             Map<String, String> envMap = System.getenv();
-            if (regionInfos.size() == 0) {
-                String regionJson = envMap.get(CacheClientConstant.ENV_CACHE_CLIENT_REGION_ID_KEY);
-                checkEnvParamNull(regionJson, CacheClientConstant.ENV_CACHE_CLIENT_REGION_ID_KEY);
-                try {
-                    List<Map<String, Object>> configList = new Gson().fromJson(regionJson, List.class);
-                    for (Map<String, Object> map : configList) {
-                        RegionInfo regionInfo = new RegionInfo();
-                        regionInfo.setRegionId(TypeUtils.parseString(map.get(CacheClientConstant.ENV_REGION_REGION_ID_NAME_KEY)));
-                        regionInfo.setEndpoint(TypeUtils.parseString(map.get(CacheClientConstant.ENV_REGION_ENDPOINT_NAME_KEY)));
-                        regionInfo.setVpc(TypeUtils.parseBoolean(map.get(CacheClientConstant.ENV_REGION_VPC_NAME_KEY)));
-                        regionInfos.add(regionInfo);
-                    }
-                } catch (Exception e) {
-                    throw new IllegalArgumentException(String.format("env param[%s] is illegal", CacheClientConstant.ENV_CACHE_CLIENT_REGION_ID_KEY));
-                }
-            }
             if (provider == null) {
                 String credentialsType = envMap.get(CacheClientConstant.ENV_CREDENTIALS_TYPE_KEY);
                 checkEnvParamNull(credentialsType, CacheClientConstant.ENV_CREDENTIALS_TYPE_KEY);
@@ -268,7 +254,34 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                     default:
                         throw new IllegalArgumentException(String.format("env param[%s] is illegal", CacheClientConstant.ENV_CREDENTIALS_TYPE_KEY));
                 }
+                if (regionInfos.size() == 0) {
+                    String regionJson = envMap.get(CacheClientConstant.ENV_CACHE_CLIENT_REGION_ID_KEY);
+                    checkEnvParamNull(regionJson, CacheClientConstant.ENV_CACHE_CLIENT_REGION_ID_KEY);
+                    try {
+                        List<Map<String, Object>> configList = new Gson().fromJson(regionJson, List.class);
+                        for (Map<String, Object> map : configList) {
+                            RegionInfo regionInfo = new RegionInfo();
+                            regionInfo.setRegionId(TypeUtils.parseString(map.get(CacheClientConstant.ENV_REGION_REGION_ID_NAME_KEY)));
+                            regionInfo.setEndpoint(TypeUtils.parseString(map.get(CacheClientConstant.ENV_REGION_ENDPOINT_NAME_KEY)));
+                            regionInfo.setVpc(TypeUtils.parseBoolean(map.get(CacheClientConstant.ENV_REGION_VPC_NAME_KEY)));
+                            regionInfos.add(regionInfo);
+                        }
+                    } catch (Exception e) {
+                        throw new IllegalArgumentException(String.format("env param[%s] is illegal", CacheClientConstant.ENV_CACHE_CLIENT_REGION_ID_KEY));
+                    }
+                }
                 withCredentialsProvider(provider);
+            }
+        }
+
+        private void initProperties() {
+            if (provider == null) {
+                CredentialsProperties credentialsProperties = CredentialsPropertiesUtils.loadCredentialsProperties("");
+                if (credentialsProperties != null) {
+                    AlibabaCloudCredentialsProvider provider = credentialsProperties.getProvider();
+                    withCredentialsProvider(provider);
+                    regionInfos.addAll(credentialsProperties.getRegionInfoList());
+                }
             }
         }
 

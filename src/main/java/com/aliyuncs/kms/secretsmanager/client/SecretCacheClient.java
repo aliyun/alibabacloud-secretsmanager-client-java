@@ -209,7 +209,8 @@ public class SecretCacheClient implements Closeable {
                 throw new CacheSecretException(e);
             }
         }
-        return new SecretInfo(resp.getSecretName(), resp.getVersionId(), resp.getSecretData(), resp.getSecretDataType(), resp.getCreateTime());
+        return new SecretInfo(resp.getSecretName(), resp.getVersionId(), resp.getSecretData(), resp.getSecretDataType(), resp.getCreateTime(), resp.getSecretType(), resp.getAutomaticRotation(), resp.getExtendedConfig(), resp.getRotationInterval(), resp.getNextRotationDate());
+
     }
 
     private void storeAndRefresh(final String secretName, final SecretInfo secretInfo) throws CacheSecretException {

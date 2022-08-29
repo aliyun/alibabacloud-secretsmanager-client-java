@@ -1,5 +1,7 @@
 package com.aliyuncs.kms.secretsmanager.client.service;
 
+import com.aliyun.dkms.gcs.openapi.models.Config;
+import com.aliyun.kms.KmsTransferAcsClient;
 import com.aliyuncs.DefaultAcsClient;
 import com.aliyuncs.auth.AlibabaCloudCredentialsProvider;
 import com.aliyuncs.auth.InstanceProfileCredentialsProvider;
@@ -10,14 +12,17 @@ import com.aliyuncs.kms.model.v20160120.GetSecretValueRequest;
 import com.aliyuncs.kms.model.v20160120.GetSecretValueResponse;
 import com.aliyuncs.kms.secretsmanager.client.exception.CacheSecretException;
 import com.aliyuncs.kms.secretsmanager.client.model.CredentialsProperties;
+import com.aliyuncs.kms.secretsmanager.client.model.DKmsConfig;
 import com.aliyuncs.kms.secretsmanager.client.model.RegionInfo;
 import com.aliyuncs.kms.secretsmanager.client.utils.*;
 import com.aliyuncs.profile.DefaultProfile;
 import com.aliyuncs.profile.IClientProfile;
 import com.aliyuncs.utils.StringUtils;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,10 +32,13 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
 
     private List<RegionInfo> regionInfos = new ArrayList<>();
 
+    private Map<RegionInfo, DKmsConfig> dKmsConfigsMap = new HashMap<>();
+
     private AlibabaCloudCredentialsProvider provider;
 
     private BackoffStrategy backoffStrategy;
 
+    private String customConfigFile;
 
     public DefaultSecretManagerClientBuilder withToken(String tokenId, String token) {
         this.provider = CredentialsProviderUtils.withToken(tokenId, token);
@@ -87,6 +95,24 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
         return this;
     }
 
+    public DefaultSecretManagerClientBuilder addDKmsConfig(DKmsConfig dKmsConfig) {
+        if (StringUtils.isEmpty(dKmsConfig.getRegionId()) || StringUtils.isEmpty(dKmsConfig.getEndpoint())) {
+            throw new IllegalArgumentException("param[regionId or endpoint] is null");
+        }
+        RegionInfo regionInfo = new RegionInfo();
+        regionInfo.setKmsType(CacheClientConstant.DKMS_TYPE);
+        regionInfo.setRegionId(dKmsConfig.getRegionId());
+        regionInfo.setEndpoint(dKmsConfig.getEndpoint());
+        dKmsConfigsMap.put(regionInfo, dKmsConfig);
+        regionInfos.add(regionInfo);
+        return this;
+    }
+
+    public DefaultSecretManagerClientBuilder withCustomConfigFile(String customConfigFile) {
+        this.customConfigFile = customConfigFile;
+        return this;
+    }
+
     public SecretManagerClient build() throws CacheSecretException {
         DefaultSecretManagerClient client = new DefaultSecretManagerClient();
         return client;
@@ -95,7 +121,7 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
     class DefaultSecretManagerClient implements SecretManagerClient {
 
         private ScheduledThreadPoolExecutor pool = new ScheduledThreadPoolExecutor(5);
-        private Map<String, DefaultAcsClient> clientMap = new HashMap<>();
+        private Map<RegionInfo, DefaultAcsClient> clientMap = new HashMap<>();
 
 
         public GetSecretValueResponse getSecretValue(GetSecretValueRequest req) throws ClientException {
@@ -157,7 +183,7 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                 pool.shutdown();
             }
             if (clientMap != null && clientMap.size() > 0) {
-                for (Map.Entry<String, DefaultAcsClient> clientEntry : clientMap.entrySet()) {
+                for (Map.Entry<RegionInfo, DefaultAcsClient> clientEntry : clientMap.entrySet()) {
                     try {
                         DefaultAcsClient client = clientEntry.getValue();
                         client.getHttpClient().close();
@@ -173,32 +199,64 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
         }
 
         private DefaultAcsClient getClient(RegionInfo regionInfo) {
-            if (clientMap.get(regionInfo.getRegionId()) != null) {
-                return clientMap.get(regionInfo.getRegionId());
+            if (clientMap.get(regionInfo) != null) {
+                return clientMap.get(regionInfo);
             }
             synchronized (regionInfo) {
-                if (clientMap.get(regionInfo.getRegionId()) != null) {
-                    return clientMap.get(regionInfo.getRegionId());
+                if (clientMap.containsKey(regionInfo)) {
+                    return clientMap.get(regionInfo);
                 }
-                IClientProfile profile = DefaultProfile.getProfile(regionInfo.getRegionId());
-                if (!StringUtils.isEmpty(regionInfo.getEndpoint())) {
-                    DefaultProfile.addEndpoint(regionInfo.getRegionId(), CacheClientConstant.PRODUCT_NAME, regionInfo.getEndpoint());
-                } else if (regionInfo.getVpc()) {
-                    DefaultProfile.addEndpoint(regionInfo.getRegionId(), CacheClientConstant.PRODUCT_NAME, KmsEndpointUtils.getVPCEndpoint(regionInfo.getRegionId()));
+                if (regionInfo.getKmsType() == CacheClientConstant.DKMS_TYPE) {
+                    clientMap.put(regionInfo, buildDKMSTransferClient(regionInfo));
+                } else {
+                    clientMap.put(regionInfo, buildKMSClient(regionInfo));
                 }
-                HttpClientConfig clientConfig = HttpClientConfig.getDefault();
-                clientConfig.setIgnoreSSLCerts(true);
-                profile.setHttpClientConfig(clientConfig);
-                DefaultAcsClient acsClient = new DefaultAcsClient(profile, provider);
-                acsClient.appendUserAgent(UserAgentManager.getUserAgent(), UserAgentManager.getProjectVersion());
-                clientMap.put(regionInfo.getRegionId(), acsClient);
             }
-            return clientMap.get(regionInfo.getRegionId());
+            return clientMap.get(regionInfo);
+        }
+
+        private DefaultAcsClient buildKMSClient(RegionInfo regionInfo) {
+            IClientProfile profile = DefaultProfile.getProfile(regionInfo.getRegionId());
+            if (!StringUtils.isEmpty(regionInfo.getEndpoint())) {
+                DefaultProfile.addEndpoint(regionInfo.getRegionId(), CacheClientConstant.PRODUCT_NAME, regionInfo.getEndpoint());
+            } else if (regionInfo.getVpc()) {
+                DefaultProfile.addEndpoint(regionInfo.getRegionId(), CacheClientConstant.PRODUCT_NAME, KmsEndpointUtils.getVPCEndpoint(regionInfo.getRegionId()));
+            }
+            HttpClientConfig clientConfig = HttpClientConfig.getDefault();
+            clientConfig.setIgnoreSSLCerts(true);
+            profile.setHttpClientConfig(clientConfig);
+            DefaultAcsClient acsClient = new DefaultAcsClient(profile, provider);
+            acsClient.appendUserAgent(UserAgentManager.getUserAgent(), UserAgentManager.getProjectVersion());
+            return acsClient;
+        }
+
+        private DefaultAcsClient buildDKMSTransferClient(RegionInfo regionInfo) {
+            Config config;
+            IClientProfile profile = DefaultProfile.getProfile(regionInfo.getRegionId(), CacheClientConstant.PRETEND_AK, CacheClientConstant.PRETEND_SK);
+            DKmsConfig dKmsConfig = DefaultSecretManagerClientBuilder.this.dKmsConfigsMap.get(regionInfo);
+            if (dKmsConfig == null) {
+                throw new IllegalArgumentException("Unrecognized regionId");
+            } else {
+                config = dKmsConfig;
+                config.setRegionId(regionInfo.getRegionId());
+                config.setEndpoint(regionInfo.getEndpoint());
+                config.setPassword(dKmsConfig.getPassword());
+            }
+            HttpClientConfig clientConfig = HttpClientConfig.getDefault();
+            clientConfig.setIgnoreSSLCerts(dKmsConfig.getIgnoreSslCerts());
+            profile.setHttpClientConfig(clientConfig);
+            return new KmsTransferAcsClient(profile, config);
         }
 
         public void init() throws CacheSecretException {
-            initProperties();
-            initEnv();
+            initFromConfigFile();
+            initFromEnv();
+            if (regionInfos.isEmpty()) {
+                throw new IllegalArgumentException("the param[regionInfo] is needed");
+            }
+            if (dKmsConfigsMap.isEmpty() && provider == null) {
+                throw new IllegalArgumentException("the param[credentials] is needed");
+            }
             UserAgentManager.registerUserAgent(CacheClientConstant.USER_AGENT_OF_SECRETS_MANAGER_JAVA, 0, CacheClientConstant.PROJECT_VERSION);
             if (backoffStrategy == null) {
                 backoffStrategy = new FullJitterBackoffStrategy();
@@ -207,15 +265,19 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
             regionInfos = sortRegionInfos(regionInfos);
         }
 
-        private void initEnv() throws CacheSecretException {
+        private void initFromEnv() throws CacheSecretException {
             Map<String, String> envMap = System.getenv();
-            if (provider == null) {
-                String credentialsType = envMap.get(CacheClientConstant.ENV_CREDENTIALS_TYPE_KEY);
-                checkEnvParamNull(credentialsType, CacheClientConstant.ENV_CREDENTIALS_TYPE_KEY);
+            initCredentialsProviderFromEnv(envMap);
+            initDkmsInstancesFromEnv(envMap);
+            initKmsRegionsFromEnv(envMap);
+        }
+
+        private void initCredentialsProviderFromEnv(Map<String, String> envMap) {
+            String credentialsType = envMap.get(CacheClientConstant.ENV_CREDENTIALS_TYPE_KEY);
+            if (!StringUtils.isEmpty(credentialsType)) {
                 String accessKeyId = envMap.get(CacheClientConstant.ENV_CREDENTIALS_ACCESS_KEY_ID_KEY);
                 String accessSecret = envMap.get(CacheClientConstant.ENV_CREDENTIALS_ACCESS_SECRET_KEY);
-
-                AlibabaCloudCredentialsProvider provider;
+                AlibabaCloudCredentialsProvider provider = null;
                 switch (credentialsType) {
                     case "ak":
                         checkEnvParamNull(accessKeyId, CacheClientConstant.ENV_CREDENTIALS_ACCESS_KEY_ID_KEY);
@@ -246,7 +308,7 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                         provider = new InstanceProfileCredentialsProvider(roleName);
                         break;
                     case "client_key":
-                        String password = ClientKeyUtils.getPassword(envMap);
+                        String password = ClientKeyUtils.getPassword(envMap, CacheClientConstant.ENV_CLIENT_KEY_PASSWORD_FROM_ENV_VARIABLE_NAME, CacheClientConstant.ENV_CLIENT_KEY_PASSWORD_FROM_FILE_PATH_NAME);
                         String privateKeyPath = envMap.get(CacheClientConstant.ENV_CLIENT_KEY_PRIVATE_KEY_PATH_NAME_KEY);
                         checkEnvParamNull(privateKeyPath, CacheClientConstant.ENV_CLIENT_KEY_PRIVATE_KEY_PATH_NAME_KEY);
                         provider = CredentialsProviderUtils.getCredentialsProvider(privateKeyPath, password);
@@ -254,33 +316,67 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                     default:
                         throw new IllegalArgumentException(String.format("env param[%s] is illegal", CacheClientConstant.ENV_CREDENTIALS_TYPE_KEY));
                 }
-                if (regionInfos.size() == 0) {
-                    String regionJson = envMap.get(CacheClientConstant.ENV_CACHE_CLIENT_REGION_ID_KEY);
-                    checkEnvParamNull(regionJson, CacheClientConstant.ENV_CACHE_CLIENT_REGION_ID_KEY);
-                    try {
-                        List<Map<String, Object>> configList = new Gson().fromJson(regionJson, List.class);
-                        for (Map<String, Object> map : configList) {
-                            RegionInfo regionInfo = new RegionInfo();
-                            regionInfo.setRegionId(TypeUtils.parseString(map.get(CacheClientConstant.ENV_REGION_REGION_ID_NAME_KEY)));
-                            regionInfo.setEndpoint(TypeUtils.parseString(map.get(CacheClientConstant.ENV_REGION_ENDPOINT_NAME_KEY)));
-                            regionInfo.setVpc(TypeUtils.parseBoolean(map.get(CacheClientConstant.ENV_REGION_VPC_NAME_KEY)));
-                            regionInfos.add(regionInfo);
-                        }
-                    } catch (Exception e) {
-                        throw new IllegalArgumentException(String.format("env param[%s] is illegal", CacheClientConstant.ENV_CACHE_CLIENT_REGION_ID_KEY));
-                    }
+                if (provider != null) {
+                    withCredentialsProvider(provider);
                 }
-                withCredentialsProvider(provider);
             }
         }
 
-        private void initProperties() {
-            if (provider == null) {
-                CredentialsProperties credentialsProperties = CredentialsPropertiesUtils.loadCredentialsProperties("");
-                if (credentialsProperties != null) {
+        private void initDkmsInstancesFromEnv(Map<String, String> envMap) {
+            List<DKmsConfig> dKmsConfigs = new ArrayList<>();
+            String configJson = envMap.get(CacheClientConstant.CACHE_CLIENT_DKMS_CONFIG_INFO_KEY);
+            if (!StringUtils.isEmpty(configJson)) {
+                try {
+                    Type configListType = new TypeToken<ArrayList<DKmsConfig>>() {
+                    }.getType();
+                    dKmsConfigs.addAll(new Gson().fromJson(configJson, configListType));
+                } catch (Exception e) {
+                    throw new IllegalArgumentException(String.format("env param[%s] is illegal", CacheClientConstant.CACHE_CLIENT_DKMS_CONFIG_INFO_KEY));
+                }
+
+            }
+            for (DKmsConfig dKmsConfig : dKmsConfigs) {
+                RegionInfo regionInfo = new RegionInfo();
+                if (StringUtils.isEmpty(dKmsConfig.getRegionId()) || StringUtils.isEmpty(dKmsConfig.getEndpoint())) {
+                    throw new IllegalArgumentException("init env fail,cause of cache_client_dkms_config_info param[regionId or endpoint] is null");
+                }
+                regionInfo.setRegionId(dKmsConfig.getRegionId());
+                regionInfo.setEndpoint(dKmsConfig.getEndpoint());
+                regionInfo.setKmsType(CacheClientConstant.DKMS_TYPE);
+                dKmsConfig.setPassword(ClientKeyUtils.getPassword(envMap, dKmsConfig.getPasswordFromEnvVariable(), dKmsConfig.getPasswordFromFilePathName()));
+                dKmsConfigsMap.put(regionInfo, dKmsConfig);
+                regionInfos.add(regionInfo);
+            }
+        }
+
+        private void initKmsRegionsFromEnv(Map<String, String> envMap) {
+            String regionJson = envMap.get(CacheClientConstant.ENV_CACHE_CLIENT_REGION_ID_KEY);
+            if (!StringUtils.isEmpty(regionJson)) {
+                try {
+                    List<Map<String, Object>> configList = new Gson().fromJson(regionJson, List.class);
+                    for (Map<String, Object> map : configList) {
+                        RegionInfo regionInfo = new RegionInfo();
+                        regionInfo.setRegionId(TypeUtils.parseString(map.get(CacheClientConstant.ENV_REGION_REGION_ID_NAME_KEY)));
+                        regionInfo.setEndpoint(TypeUtils.parseString(map.get(CacheClientConstant.ENV_REGION_ENDPOINT_NAME_KEY)));
+                        regionInfo.setVpc(TypeUtils.parseBoolean(map.get(CacheClientConstant.ENV_REGION_VPC_NAME_KEY)));
+                        regionInfos.add(regionInfo);
+                    }
+                } catch (Exception e) {
+                    throw new IllegalArgumentException(String.format("env param[%s] is illegal", CacheClientConstant.ENV_CACHE_CLIENT_REGION_ID_KEY));
+                }
+            }
+        }
+
+        private void initFromConfigFile() {
+            CredentialsProperties credentialsProperties = CredentialsPropertiesUtils.loadCredentialsProperties(customConfigFile);
+            if (credentialsProperties != null) {
+                if (credentialsProperties.getProvider() != null) {
                     AlibabaCloudCredentialsProvider provider = credentialsProperties.getProvider();
                     withCredentialsProvider(provider);
-                    regionInfos.addAll(credentialsProperties.getRegionInfoList());
+                }
+                regionInfos.addAll(credentialsProperties.getRegionInfoList());
+                if (credentialsProperties.getDkmsConfigsMap() != null) {
+                    dKmsConfigsMap.putAll(credentialsProperties.getDkmsConfigsMap());
                 }
             }
         }
@@ -337,7 +433,7 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                     try {
                         return getSecretValue(regionInfo, req);
                     } catch (ClientException e) {
-                        CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:getSecretValue", e);
+                        CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:getSecretValue regionInfo:{}", regionInfo, e);
                         if (!BackoffUtils.judgeNeedRecoveryException(e)) {
                             throw e;
                         }
@@ -366,7 +462,7 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
         }
         return regionInfoExtends.stream().sorted(Comparator.comparing((RegionInfoExtend regionInfoExtend) -> !regionInfoExtend.getReachable())
                 .thenComparing(RegionInfoExtend::getEscaped))
-                .map(regionInfoExtend -> new RegionInfo(regionInfoExtend.getRegionId(), regionInfoExtend.getVpc(), regionInfoExtend.getEndpoint()))
+                .map(regionInfoExtend -> new RegionInfo(regionInfoExtend.getRegionId(), regionInfoExtend.getVpc(), regionInfoExtend.getEndpoint(), regionInfoExtend.getKmsType()))
                 .collect(Collectors.toList());
     }
 
@@ -377,11 +473,13 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
         private String regionId;
         private boolean vpc;
         private String endpoint;
+        private int kmsType;
 
         public RegionInfoExtend(RegionInfo regionInfo) {
             this.regionId = regionInfo.getRegionId();
             this.vpc = regionInfo.getVpc();
             this.endpoint = regionInfo.getEndpoint();
+            this.kmsType = regionInfo.getKmsType();
         }
 
         public String getRegionId() {
@@ -410,6 +508,10 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
 
         public void setEscaped(double escaped) {
             this.escaped = escaped;
+        }
+
+        public int getKmsType() {
+            return kmsType;
         }
     }
 

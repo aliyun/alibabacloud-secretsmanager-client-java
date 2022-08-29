@@ -25,6 +25,13 @@ public class RegionInfo implements Serializable {
      */
     private String endpoint;
 
+    /**
+     * kms类型
+     * 0:kms
+     * 1:专属KMS
+     */
+    private int kmsType;
+
     public RegionInfo() {
         // do nothing
     }
@@ -61,6 +68,13 @@ public class RegionInfo implements Serializable {
         this.endpoint = endpoint;
     }
 
+    public RegionInfo(String regionId, boolean vpc, String endpoint, int kmsType) {
+        this.regionId = regionId;
+        this.vpc = vpc;
+        this.endpoint = endpoint;
+        this.kmsType = kmsType;
+    }
+
     public String getRegionId() {
         return regionId;
     }
@@ -86,12 +100,21 @@ public class RegionInfo implements Serializable {
         this.endpoint = endpoint;
     }
 
+    public int getKmsType() {
+        return kmsType;
+    }
+
+    public void setKmsType(int kmsType) {
+        this.kmsType = kmsType;
+    }
+
     @Override
     public String toString() {
         return "RegionInfo{" +
                 "regionId='" + regionId + '\'' +
                 ", vpc=" + vpc +
                 ", endpoint='" + endpoint + '\'' +
+                ", kmsType='" + kmsType + '\'' +
                 '}';
     }
 
@@ -116,4 +139,5 @@ public class RegionInfo implements Serializable {
         }
         return Objects.hash(regionId, vpc);
     }
+
 }

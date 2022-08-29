@@ -4,6 +4,7 @@ import com.aliyuncs.kms.secretsmanager.client.SecretCacheClient;
 import com.aliyuncs.kms.secretsmanager.client.SecretCacheClientBuilder;
 import com.aliyuncs.kms.secretsmanager.client.cache.FileCacheSecretStoreStrategy;
 import com.aliyuncs.kms.secretsmanager.client.exception.CacheSecretException;
+import com.aliyuncs.kms.secretsmanager.client.model.DKmsConfig;
 import com.aliyuncs.kms.secretsmanager.client.model.SecretInfo;
 import com.aliyuncs.kms.secretsmanager.client.service.BaseSecretManagerClientBuilder;
 import com.aliyuncs.kms.secretsmanager.client.service.DefaultRefreshSecretStrategy;
@@ -15,7 +16,7 @@ import org.junit.Test;
 public class TestCacheSecret {
 
     @Test
-    public void testGetSecretByEnv() {
+    public void testGetSecretByEnvOrConf() {
         try {
             SecretCacheClient client = SecretCacheClientBuilder.newClient();
             SecretInfo secretInfo = client.getSecretInfo("#secretName#");
@@ -50,6 +51,36 @@ public class TestCacheSecret {
             SecretInfo secretInfo = client.getSecretInfo("#secretName#");
             System.out.println("secretInfo:" + new Gson().toJson(secretInfo));
         } catch (Exception e) {
+            System.out.println("CacheSecretException:" + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testGetSecretByWithCustomConfigFile() {
+        try {
+            SecretCacheClient client = SecretCacheClientBuilder.newCacheClientBuilder(
+                    BaseSecretManagerClientBuilder.standard().withCustomConfigFile("#customConfigFileName#").build()).build();
+            SecretInfo secretInfo = client.getSecretInfo("#secretName#");
+            System.out.println("secretInfo:" + new Gson().toJson(secretInfo));
+        } catch (CacheSecretException e) {
+            System.out.println("CacheSecretException:" + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testGetSecretByAddDkmsConfig() {
+        try {
+            DKmsConfig config = new DKmsConfig();
+            config.setIgnoreSslCerts(true);
+            config.setPassword("#password#");
+            config.setRegionId("#regionId#");
+            config.setEndpoint("#endpoint#");
+            config.setClientKeyFile("#clientKeyFilePath#");
+            SecretCacheClient client = SecretCacheClientBuilder.newCacheClientBuilder(
+                    BaseSecretManagerClientBuilder.standard().addDKmsConfig(config).build()).build();
+            SecretInfo secretInfo = client.getSecretInfo("#secretName#");
+            System.out.println("secretInfo:" + new Gson().toJson(secretInfo));
+        } catch (CacheSecretException e) {
             System.out.println("CacheSecretException:" + e.getMessage());
         }
     }

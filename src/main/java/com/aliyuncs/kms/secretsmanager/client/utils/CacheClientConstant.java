@@ -185,4 +185,25 @@ public interface CacheClientConstant {
      * client_key_password_from_file_path key
      */
     String ENV_CLIENT_KEY_PASSWORD_FROM_FILE_PATH_NAME = "client_key_password_from_file_path";
+
+    /**
+     * 环境变量cache_client_dkms_config_info key
+     */
+    String CACHE_CLIENT_DKMS_CONFIG_INFO_KEY = "cache_client_dkms_config_info";
+    /**
+     * 环境变量cache_client_config_info key
+     */
+    String ENV_IGNORE_SSL_CERTS_KEY = "ignoreSSLCerts";
+    /**
+     * 虚假的ak
+     */
+    String PRETEND_AK = "PRETEND_AK";
+    /**
+     * 虚假的sk
+     */
+    String PRETEND_SK = "PRETEND_SK";
+
+    int DKMS_TYPE = 1;
+
+    int KMS_TYPE = 0;
 }

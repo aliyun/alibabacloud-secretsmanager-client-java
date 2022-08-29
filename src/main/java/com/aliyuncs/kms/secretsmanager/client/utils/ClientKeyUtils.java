@@ -29,18 +29,21 @@ public class ClientKeyUtils {
         return Base64.getEncoder().encodeToString(privateKey.getEncoded());
     }
 
-    public static String getPassword(Map envMap) {
-        String passwordFromEnvName = (String) envMap.getOrDefault(CacheClientConstant.ENV_CLIENT_KEY_PASSWORD_FROM_ENV_VARIABLE_NAME, "");
+    public static String getPassword(Map envMap, String envVariableName, String filePathName) {
+        String passwordFromEnvName = "";
+        if (!StringUtils.isEmpty(envVariableName)) {
+            passwordFromEnvName = (String) envMap.getOrDefault(envVariableName, "");
+        }
         String password = "";
         if (!StringUtils.isEmpty(passwordFromEnvName)) {
             password = System.getenv(passwordFromEnvName);
         }
-        if (StringUtils.isEmpty(password)) {
-            String passwordFilePath = (String) envMap.getOrDefault(CacheClientConstant.ENV_CLIENT_KEY_PASSWORD_FROM_FILE_PATH_NAME, "");
+        if (StringUtils.isEmpty(password) && !StringUtils.isEmpty(filePathName)) {
+            String passwordFilePath = (String) envMap.getOrDefault(filePathName, "");
             if (!StringUtils.isEmpty(passwordFilePath)) {
                 try {
                     byte[] bytes = Files.readAllBytes(Paths.get(passwordFilePath));
-                    password = new String(bytes);
+                    password = new String(bytes,"UTF-8");
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

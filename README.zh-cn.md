@@ -49,7 +49,7 @@ mvn clean install -DskipTests -Dgpg.skip=true
 
 ## 示例代码
 ### 一般用户代码
-* 通过系统环境变量构建客户端([系统环境变量设置详情](README_environment.zh-cn.md))
+* 通过系统环境变量或配置文件(secretsmanager.properties)构建客户端([系统环境变量设置详情](README_environment.zh-cn.md)、[配置文件设置详情](README_config.zh-cn.md))
 
 ```Java
 import com.aliyuncs.kms.secretsmanager.client.SecretCacheClient;

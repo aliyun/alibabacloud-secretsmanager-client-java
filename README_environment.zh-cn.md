@@ -47,7 +47,7 @@
 
 * 访问DKMS，你必须要设置如下系统环境变量 (linux):
 
-    - export cache_client_dkms_config_info=[{"ignoreSslCerts":false,"passwordFromFilePathName":"client_key_password_from_file_path","clientKeyFile":"\<your client key file absolute path>","regionId":"\<your dkms region>","endpoint":"\<your dkms endpoint>"}]
+    - export cache_client_dkms_config_info=[{"ignoreSslCerts":false,"passwordFromFilePathName":"client_key_password_from_file_path","clientKeyFile":"\<your client key file absolute path>","regionId":"\<your dkms region>","endpoint":"\<your dkms endpoint>","caFilePath":"\<your CA certificate file absolute path>","ca":"\<your CA certificate content>"}]
     ```
         cache_client_dkms_config_info配置项说明:
         1. cache_client_dkms_config_info配置项为json数组，支持配置多个region实例
@@ -64,6 +64,8 @@
         4. clientKeyFile:client key json文件的绝对路径
         5. regionId:地域Id
         6. endpoint:专属kms的域名地址
+  		7. caFilePath:专属kms的CA证书绝对路径，与ca配置项二选一
+  		8. ca:专属kms的CA证书内容，与caFilePath配置项二选一
     ```
     
    

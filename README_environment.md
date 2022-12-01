@@ -47,7 +47,7 @@ Use Aliyun Secrets Manager client by system environment variables with the below
 
 * Access aliyun dedicated kms, you must set the following system environment variables (for linux):
 
-    - export cache_client_dkms_config_info=[{"ignoreSslCerts":false,"passwordFromFilePathName":"client_key_password_from_file_path","clientKeyFile":"\<your client key file absolute path>","regionId":"\<your dkms region>","endpoint":"\<your dkms endpoint>"}]
+    - export cache_client_dkms_config_info=[{"ignoreSslCerts":false,"passwordFromFilePathName":"client_key_password_from_file_path","clientKeyFile":"\<your client key file absolute path>","regionId":"\<your dkms region>","endpoint":"\<your dkms endpoint>","caFilePath":"\<your CA certificate file absolute path>"}]
     ```
         The details of the configuration item named cache_client_dkms_config_info:
         1. The configuration item named cache_client_dkms_config_info must be configured as a json array, you can configure multiple region instances
@@ -64,6 +64,7 @@ Use Aliyun Secrets Manager client by system environment variables with the below
         4. clientKeyFile:The absolute path to the client key json file
         5. regionId:Region id
         6. endpoint:Domain address of dkms
+  		7. caFilePath:The absolute path of the CA certificate of the dkms
     ```
     
     

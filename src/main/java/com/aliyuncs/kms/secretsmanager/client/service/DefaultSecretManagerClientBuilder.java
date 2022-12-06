@@ -343,7 +343,11 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                 regionInfo.setRegionId(dKmsConfig.getRegionId());
                 regionInfo.setEndpoint(dKmsConfig.getEndpoint());
                 regionInfo.setKmsType(CacheClientConstant.DKMS_TYPE);
-                dKmsConfig.setPassword(ClientKeyUtils.getPassword(envMap, dKmsConfig.getPasswordFromEnvVariable(), dKmsConfig.getPasswordFromFilePathName()));
+                if (!StringUtils.isEmpty(dKmsConfig.getPasswordFromFilePath())) {
+                    dKmsConfig.setPassword(ClientKeyUtils.readPasswordFile(dKmsConfig.getPasswordFromFilePath()));
+                } else {
+                    dKmsConfig.setPassword(ClientKeyUtils.getPassword(envMap, dKmsConfig.getPasswordFromEnvVariable(), dKmsConfig.getPasswordFromFilePathName()));
+                }
                 dKmsConfigsMap.put(regionInfo, dKmsConfig);
                 regionInfos.add(regionInfo);
             }

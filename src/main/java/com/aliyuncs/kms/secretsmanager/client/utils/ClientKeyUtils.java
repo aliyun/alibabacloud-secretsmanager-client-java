@@ -41,12 +41,7 @@ public class ClientKeyUtils {
         if (StringUtils.isEmpty(password) && !StringUtils.isEmpty(filePathName)) {
             String passwordFilePath = (String) envMap.getOrDefault(filePathName, "");
             if (!StringUtils.isEmpty(passwordFilePath)) {
-                try {
-                    byte[] bytes = Files.readAllBytes(Paths.get(passwordFilePath));
-                    password = new String(bytes,"UTF-8");
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                password = readPasswordFile(passwordFilePath);
             }
         }
         if (StringUtils.isEmpty(password)) {
@@ -56,5 +51,14 @@ public class ClientKeyUtils {
             throw new IllegalArgumentException("client key password is not provided");
         }
         return password;
+    }
+
+    public static String readPasswordFile(String passwordFilePath) {
+        try {
+            byte[] bytes = Files.readAllBytes(Paths.get(passwordFilePath));
+            return new String(bytes, "UTF-8");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

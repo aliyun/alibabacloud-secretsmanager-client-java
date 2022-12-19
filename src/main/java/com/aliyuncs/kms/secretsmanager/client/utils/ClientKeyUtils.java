@@ -1,9 +1,9 @@
 package com.aliyuncs.kms.secretsmanager.client.utils;
 
+import com.aliyun.dkms.gcs.openapi.models.Config;
 import com.aliyuncs.utils.StringUtils;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.*;
@@ -41,12 +41,7 @@ public class ClientKeyUtils {
         if (StringUtils.isEmpty(password) && !StringUtils.isEmpty(filePathName)) {
             String passwordFilePath = (String) envMap.getOrDefault(filePathName, "");
             if (!StringUtils.isEmpty(passwordFilePath)) {
-                try {
-                    byte[] bytes = Files.readAllBytes(Paths.get(passwordFilePath));
-                    password = new String(bytes,"UTF-8");
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                password = readPasswordFile(passwordFilePath);
             }
         }
         if (StringUtils.isEmpty(password)) {
@@ -56,5 +51,9 @@ public class ClientKeyUtils {
             throw new IllegalArgumentException("client key password is not provided");
         }
         return password;
+    }
+
+    public static String readPasswordFile(String passwordFilePath) {
+       return ConfigUtils.readFileContent(passwordFilePath);
     }
 }

@@ -11,8 +11,8 @@ public class JsonIOUtils {
     }
 
     public static <T> T readObject(String filePath, String fileName, Class<T> type) {
-        File file = new File(filePath + File.separatorChar + fileName);
-        if (!file.exists()) {
+        File file = ConfigUtils.getFileByPath(filePath + File.separatorChar + fileName);
+        if (file == null || !file.exists()) {
             return null;
         }
         try (

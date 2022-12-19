@@ -34,7 +34,7 @@
 <dependency>
     <groupId>com.aliyun</groupId>
     <artifactId>alibabacloud-secretsmanager-client</artifactId>
-    <version>1.3.0</version>
+    <version>1.3.2</version>
 </dependency>
 ```
 

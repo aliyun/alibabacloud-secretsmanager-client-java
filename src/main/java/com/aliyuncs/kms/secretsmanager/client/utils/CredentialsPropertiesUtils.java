@@ -111,8 +111,11 @@ public class CredentialsPropertiesUtils {
             regionInfo.setEndpoint(dKmsConfig.getEndpoint());
             regionInfo.setKmsType(CacheClientConstant.DKMS_TYPE);
             try {
-                String password = ClientKeyUtils.getPassword(credentialsProperties.getSourceProperties(), dKmsConfig.getPasswordFromEnvVariable(), dKmsConfig.getPasswordFromFilePathName());
-                dKmsConfig.setPassword(password);
+                if (!StringUtils.isEmpty(dKmsConfig.getPasswordFromFilePath())) {
+                    dKmsConfig.setPassword(ClientKeyUtils.readPasswordFile(dKmsConfig.getPasswordFromFilePath()));
+                } else {
+                    dKmsConfig.setPassword(ClientKeyUtils.getPassword(credentialsProperties.getSourceProperties(), dKmsConfig.getPasswordFromEnvVariable(), dKmsConfig.getPasswordFromFilePathName()));
+                }
             } catch (IllegalArgumentException e) {
                 if (StringUtils.isEmpty(credentialsProperties.getPassword())) {
                     throw e;

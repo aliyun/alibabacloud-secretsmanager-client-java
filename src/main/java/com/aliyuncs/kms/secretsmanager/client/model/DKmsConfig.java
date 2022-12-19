@@ -9,6 +9,7 @@ public class DKmsConfig extends Config {
     private boolean ignoreSslCerts;
     private String passwordFromEnvVariable;
     private String passwordFromFilePathName;
+    private String passwordFromFilePath;
 
     public DKmsConfig() {
     }
@@ -35,5 +36,13 @@ public class DKmsConfig extends Config {
 
     public void setPasswordFromFilePathName(String passwordFromFilePathName) {
         this.passwordFromFilePathName = passwordFromFilePathName;
+    }
+
+    public String getPasswordFromFilePath() {
+        return passwordFromFilePath;
+    }
+
+    public void setPasswordFromFilePath(String passwordFromFilePath) {
+        this.passwordFromFilePath = passwordFromFilePath;
     }
 }

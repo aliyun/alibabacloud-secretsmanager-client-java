@@ -87,7 +87,7 @@ public class CacheClientSimpleParametersSample {
         try {
             SecretCacheClient client = SecretCacheClientBuilder.newCacheClientBuilder(
                     BaseSecretManagerClientBuilder.standard().withCredentialsProvider(CredentialsProviderUtils
-                            .withAccessKey("#accessKeyId#", "#accessKeySecret#")).withRegion("#regionId#").build()).build();
+                            .withAccessKey(System.getenv("#accessKeyId#"), System.getenv("#accessKeySecret#"))).withRegion("#regionId#").build()).build();
             SecretInfo secretInfo = client.getSecretInfo("#secretName#");
             System.out.println(secretInfo);
         } catch (CacheSecretException e) {
@@ -116,7 +116,7 @@ public class CacheClientDetailParametersSample {
     public static void main(String[] args) {
         try {
             SecretCacheClient client = SecretCacheClientBuilder.newCacheClientBuilder(BaseSecretManagerClientBuilder.standard()
-                    .withCredentialsProvider(CredentialsProviderUtils.withAccessKey("#accessKeyId#", "#accessKeySecret#"))
+                    .withCredentialsProvider(CredentialsProviderUtils.withAccessKey(System.getenv("#accessKeyId#"), System.getenv("#accessKeySecret#")))
                     .withRegion("#regionId#")
                     .withBackoffStrategy(new FullJitterBackoffStrategy(3, 2000, 10000)).build())
                     .withCacheSecretStrategy(new FileCacheSecretStoreStrategy("#cacheSecretPath#", true, "#salt#"))

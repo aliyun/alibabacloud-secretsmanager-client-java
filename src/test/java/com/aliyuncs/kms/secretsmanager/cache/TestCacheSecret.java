@@ -31,7 +31,7 @@ public class TestCacheSecret {
         try {
             SecretCacheClient client = SecretCacheClientBuilder.newCacheClientBuilder(
                     BaseSecretManagerClientBuilder.standard().withCredentialsProvider(CredentialsProviderUtils
-                            .withAccessKey("#accessKeyId#", "#accessKeySecret#")).withRegion("#regionId#").build()).build();
+                            .withAccessKey(System.getenv("#accessKeyId#"), System.getenv("#accessKeySecret#"))).withRegion("#regionId#").build()).build();
             SecretInfo secretInfo = client.getSecretInfo("#secretName#");
             System.out.println("secretInfo:" + new Gson().toJson(secretInfo));
         } catch (CacheSecretException e) {
@@ -43,7 +43,7 @@ public class TestCacheSecret {
     public void testGetSecretByCustom() {
         try {
             SecretCacheClient client = SecretCacheClientBuilder.newCacheClientBuilder(BaseSecretManagerClientBuilder.standard()
-                    .withCredentialsProvider(CredentialsProviderUtils.withAccessKey("#accessKeyId#", "#accessKeySecret#"))
+                    .withCredentialsProvider(CredentialsProviderUtils.withAccessKey(System.getenv("#accessKeyId#"), System.getenv("#accessKeySecret#")))
                     .withRegion("#regionId#").withBackoffStrategy(new FullJitterBackoffStrategy(3, 2000, 10000)).build())
                     .withCacheSecretStrategy(new FileCacheSecretStoreStrategy("#cacheSecretPath#", true, "#salt#"))
                     .withRefreshSecretStrategy(new DefaultRefreshSecretStrategy("#ttlName#"))

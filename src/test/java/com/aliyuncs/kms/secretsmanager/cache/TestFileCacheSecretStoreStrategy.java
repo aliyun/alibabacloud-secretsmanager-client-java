@@ -13,8 +13,8 @@ import org.junit.Test;
 public class TestFileCacheSecretStoreStrategy {
     private FileCacheSecretStoreStrategy storeStrategy;
     private String secretName = "cache_secret_name";
-    private String accessKey = "xxxxxxxxx";
-    private String accessSecret = "xxxxxxxxxxx";
+    private String accessKey = System.getenv("#accessKeyId#");
+    private String accessSecret = System.getenv("#accessKeySecret#");
 
     @Before
     public void init() {

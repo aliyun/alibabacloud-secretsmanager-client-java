@@ -46,10 +46,38 @@
 ```
 mvn clean install -DskipTests -Dgpg.skip=true
 ```
+## 配置文件(有以下两种方式)
+### 方式一 使用默认配置文件,文件名为secretsmanager.properties
+### 方式二 使用自定义配置文件,参考如下代码自定义配置文件名
+```java
+import com.aliyuncs.kms.secretsmanager.client.SecretCacheClient;
+import com.aliyuncs.kms.secretsmanager.client.SecretCacheClientBuilder;
+import com.aliyuncs.kms.secretsmanager.client.exception.CacheSecretException;
+import com.aliyuncs.kms.secretsmanager.client.model.SecretInfo;
+
+public class CacheClientCustomConfigFileSample {
+
+    public static void main(String[] args) {
+        try {
+            SecretCacheClient client = SecretCacheClientBuilder.newCacheClientBuilder(
+                                        BaseSecretManagerClientBuilder.standard()
+                                        //自定义配置文件名
+                                        .withCustomConfigFile("#customConfigFileName#").build())
+                                        .build();
+            SecretInfo secretInfo = client.getSecretInfo("#secretName#");
+            System.out.println("secretInfo:" + new Gson().toJson(secretInfo));
+        } catch (CacheSecretException e) {
+            System.out.println("CacheSecretException:" + e.getMessage());
+        }
+    }
+}
+
+```
+
 
 ## 示例代码
 ### 一般用户代码
-* 通过系统环境变量或配置文件(secretsmanager.properties)构建客户端([系统环境变量设置详情](README_environment.zh-cn.md)、[配置文件设置详情](README_config.zh-cn.md))
+* 通过系统环境变量或配置文件构建客户端([系统环境变量设置详情](README_environment.zh-cn.md)、[配置文件设置详情](README_config.zh-cn.md))
 
 ```Java
 import com.aliyuncs.kms.secretsmanager.client.SecretCacheClient;
@@ -86,8 +114,12 @@ public class CacheClientSimpleParametersSample {
     public static void main(String[] args) {
         try {
             SecretCacheClient client = SecretCacheClientBuilder.newCacheClientBuilder(
-                    BaseSecretManagerClientBuilder.standard().withCredentialsProvider(CredentialsProviderUtils
-                            .withAccessKey(System.getenv("#accessKeyId#"), System.getenv("#accessKeySecret#"))).withRegion("#regionId#").build()).build();
+                                    BaseSecretManagerClientBuilder.standard()
+                                    //设置访问凭证
+                                    .withCredentialsProvider(CredentialsProviderUtils.withAccessKey(System.getenv("#accessKeyId#"), System.getenv("#accessKeySecret#")))
+                                    //设置地域
+                                    .withRegion("#regionId#").build())
+                                    .build();
             SecretInfo secretInfo = client.getSecretInfo("#secretName#");
             System.out.println(secretInfo);
         } catch (CacheSecretException e) {
@@ -116,12 +148,19 @@ public class CacheClientDetailParametersSample {
     public static void main(String[] args) {
         try {
             SecretCacheClient client = SecretCacheClientBuilder.newCacheClientBuilder(BaseSecretManagerClientBuilder.standard()
+                    //设置访问凭证   
                     .withCredentialsProvider(CredentialsProviderUtils.withAccessKey(System.getenv("#accessKeyId#"), System.getenv("#accessKeySecret#")))
+                    //设置地域
                     .withRegion("#regionId#")
+                    //设置失败重试策略
                     .withBackoffStrategy(new FullJitterBackoffStrategy(3, 2000, 10000)).build())
+                    //设置文件缓存策略
                     .withCacheSecretStrategy(new FileCacheSecretStoreStrategy("#cacheSecretPath#", true, "#salt#"))
+                    //设置默认的刷新凭据策略
                     .withRefreshSecretStrategy(new DefaultRefreshSecretStrategy("#ttlName#"))
+                    //设置缓存的凭据版本状态
                     .withCacheStage("#stage#")
+                    //设置凭据刷新ttl
                     .withSecretTTL("#secretName#", 1 * 60 * 1000l)
                     .withSecretTTL("#secretName1#", 2 * 60 * 1000l).build();
             SecretInfo secretInfo = client.getSecretInfo("#secretName#");

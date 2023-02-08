@@ -47,8 +47,35 @@ Once you check out the code from GitHub, you can build it using Maven. Use the f
 mvn clean install -DskipTests -Dgpg.skip=true
 ```
 
+## Client configuration instructions
+This client supports two configuration methods
+1. Use the default configuration file (secretsmanager.properties) [click view configuration details](README_config.md)
+2. Use a custom configuration file (relative path, absolute path, and classpath reading), refer to the following sample code [click view configuration details](README_config.md)
 
+```java
+import com.aliyuncs.kms.secretsmanager.client.SecretCacheClient;
+import com.aliyuncs.kms.secretsmanager.client.SecretCacheClientBuilder;
+import com.aliyuncs.kms.secretsmanager.client.exception.CacheSecretException;
+import com.aliyuncs.kms.secretsmanager.client.model.SecretInfo;
+import com.aliyuncs.kms.secretsmanager.client.service.BaseSecretManagerClientBuilder;
 
+public class CacheClientCustomConfigFileSample {
+
+    public static void main(String[] args) {
+        try {
+            SecretCacheClient client = SecretCacheClientBuilder.newCacheClientBuilder(
+                                        BaseSecretManagerClientBuilder.standard()
+                                        //customize the configuration file name
+                                        .withCustomConfigFile("#customConfigFileName#").build())
+                                        .build();
+            SecretInfo secretInfo = client.getSecretInfo("#secretName#");
+            System.out.println("secretInfo:" + new Gson().toJson(secretInfo));
+        } catch (CacheSecretException e) {
+            System.out.println("CacheSecretException:" + e.getMessage());
+        }
+    }
+}
+```
 ## Sample Code
 ### Ordinary User Sample Code
 * Build Secrets Manager Client by system environment variables or configuration file (secretsmanager.properties) ([system environment variables setting for details](README_environment.md),[configure configuration details](README_config.md))   
@@ -89,8 +116,12 @@ public class CacheClientSimpleParametersSample {
     public static void main(String[] args) {
         try {
             SecretCacheClient client = SecretCacheClientBuilder.newCacheClientBuilder(
-                    BaseSecretManagerClientBuilder.standard().withCredentialsProvider(CredentialsProviderUtils
-                            .withAccessKey(System.getenv("#accessKeyId#"), System.getenv("#accessKeySecret#"))).withRegion("#regionId#").build()).build();
+                                    BaseSecretManagerClientBuilder.standard()
+                                    //set credentials provider
+                                    .withCredentialsProvider(CredentialsProviderUtils.withAccessKey(System.getenv("#accessKeyId#"), System.getenv("#accessKeySecret#")))
+                                    //set region
+                                    .withRegion("#regionId#").build())
+                                    .build();
             SecretInfo secretInfo = client.getSecretInfo("#secretName#");
             System.out.println(secretInfo);
         } catch (CacheSecretException e) {
@@ -118,12 +149,19 @@ public class CacheClientDetailParametersSample {
     public static void main(String[] args) {
         try {
             SecretCacheClient client = SecretCacheClientBuilder.newCacheClientBuilder(BaseSecretManagerClientBuilder.standard()
+                    //set credentials provider
                     .withCredentialsProvider(CredentialsProviderUtils.withAccessKey(System.getenv("#accessKeyId#"), System.getenv("#accessKeySecret#")))
+                    //set region
                     .withRegion("#regionId#")
+                    //set the backoff strategy
                     .withBackoffStrategy(new FullJitterBackoffStrategy(3, 2000, 10000)).build())
+                    //set the file cache strategy
                     .withCacheSecretStrategy(new FileCacheSecretStoreStrategy("#cacheSecretPath#", true, "#salt#"))
+                    //set the default refresh secret strategy
                     .withRefreshSecretStrategy(new DefaultRefreshSecretStrategy("#ttlName#"))
+                    //set the secret stage for the cache
                     .withCacheStage("#stage#")
+                    //set the secret ttl for the cache
                     .withSecretTTL("#secretName#", 1 * 60 * 1000l)
                     .withSecretTTL("#secretName1#", 2 * 60 * 1000l).build();
             SecretInfo secretInfo = client.getSecretInfo("#secretName#");

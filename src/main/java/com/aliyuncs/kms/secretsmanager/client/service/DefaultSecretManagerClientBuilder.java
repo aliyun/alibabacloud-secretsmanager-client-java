@@ -251,12 +251,7 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
         public void init() throws CacheSecretException {
             initFromConfigFile();
             initFromEnv();
-            if (regionInfos.isEmpty()) {
-                throw new IllegalArgumentException("the param[regionInfo] is needed");
-            }
-            if (dKmsConfigsMap.isEmpty() && provider == null) {
-                throw new IllegalArgumentException("the param[credentials] is needed");
-            }
+            checkConfigAndEnv();
             UserAgentManager.registerUserAgent(CacheClientConstant.USER_AGENT_OF_SECRETS_MANAGER_JAVA, 0, CacheClientConstant.PROJECT_VERSION);
             if (backoffStrategy == null) {
                 backoffStrategy = new FullJitterBackoffStrategy();
@@ -264,6 +259,15 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
             backoffStrategy.init();
             if (regionInfos.size() > 1) {
                 regionInfos = sortRegionInfos(regionInfos);
+            }
+        }
+
+        private void checkConfigAndEnv() {
+            if (dKmsConfigsMap.isEmpty() && provider == null) {
+                throw new IllegalArgumentException("The configuration of the secrets manager client must be needed, please config the configuration file or related environment variable, or set your credentials provider.");
+            }
+            if (regionInfos.isEmpty()) {
+                throw new IllegalArgumentException("The param[regionInfo] is needed");
             }
         }
 

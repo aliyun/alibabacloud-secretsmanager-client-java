@@ -13,6 +13,9 @@ public class ConfigUtils {
 
     public static Properties loadConfig(String configName) {
         File file = getFileByPath(configName);
+        if (file == null) {
+            return null;
+        }
         try (InputStream in = new FileInputStream(file)) {
             if (in == null) {
                 return null;

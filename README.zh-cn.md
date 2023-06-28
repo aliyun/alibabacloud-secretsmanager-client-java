@@ -36,6 +36,11 @@
     <artifactId>alibabacloud-secretsmanager-client</artifactId>
     <version>1.3.4</version>
 </dependency>
+<dependency>
+  <groupId>com.aliyun</groupId>
+  <artifactId>aliyun-java-sdk-core</artifactId>
+  <version>4.5.17</version>
+</dependency>
 ```
 
 

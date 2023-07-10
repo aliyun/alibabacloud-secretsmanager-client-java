@@ -1,3 +1,5 @@
+![](https://aliyunsdk-pages.alicdn.com/icons/AlibabaCloud.svg)
+
 # Aliyun Secrets Manager Client for Java
 
 [![GitHub version](https://badge.fury.io/gh/aliyun%2Falibabacloud-secretsmanager-client-java.svg)](https://badge.fury.io/gh/aliyun%2Falibabacloud-secretsmanager-client-java)
@@ -34,7 +36,7 @@ The recommended way to use the Aliyun Secrets Manager Client for Java in your pr
 <dependency>
     <groupId>com.aliyun</groupId>
     <artifactId>alibabacloud-secretsmanager-client</artifactId>
-    <version>1.3.4</version>
+    <version>1.3.5</version>
 </dependency>
 <dependency>
   <groupId>com.aliyun</groupId>

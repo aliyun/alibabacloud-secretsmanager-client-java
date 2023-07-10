@@ -1,3 +1,5 @@
+![](https://aliyunsdk-pages.alicdn.com/icons/AlibabaCloud.svg)
+
 # 阿里云凭据管家Java客户端
 [![GitHub version](https://badge.fury.io/gh/aliyun%2Falibabacloud-secretsmanager-client-java.svg)](https://badge.fury.io/gh/aliyun%2Falibabacloud-secretsmanager-client-java)
 [![Build Status](https://travis-ci.org/aliyun/alibabacloud-secretsmanager-client-java.svg?branch=master)](https://travis-ci.org/aliyun/alibabacloud-secretsmanager-client-java)
@@ -34,7 +36,7 @@
 <dependency>
     <groupId>com.aliyun</groupId>
     <artifactId>alibabacloud-secretsmanager-client</artifactId>
-    <version>1.3.4</version>
+    <version>1.3.5</version>
 </dependency>
 <dependency>
   <groupId>com.aliyun</groupId>

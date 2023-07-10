@@ -13,17 +13,26 @@ public class JsonIOUtils {
     public static <T> T readObject(String filePath, String fileName, Class<T> type) {
         File file = ConfigUtils.getFileByPath(filePath + File.separatorChar + fileName);
         if (file == null || !file.exists()) {
-            return null;
-        }
-        try (
-                FileReader fileReader = new FileReader(file);
-                BufferedReader reader = new BufferedReader(fileReader);
-        ) {
-            T json = new GsonBuilder().setPrettyPrinting().create().fromJson(reader, type);
-            return json;
-        } catch (IOException ex) {
-            CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:readObject", ex);
-            throw new RuntimeException(ex);
+            try (InputStream in = ConfigUtils.class.getClassLoader().getResourceAsStream(filePath);
+                 BufferedReader reader = in == null ? null : new BufferedReader(new InputStreamReader(in))
+            ) {
+                if (reader == null) {
+                    return null;
+                }
+                T json = new GsonBuilder().setPrettyPrinting().create().fromJson(reader, type);
+                return json;
+            } catch (IOException e) {
+                CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:readObject", e);
+                throw new RuntimeException(e);
+            }
+        } else {
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                T json = new GsonBuilder().setPrettyPrinting().create().fromJson(reader, type);
+                return json;
+            } catch (IOException e) {
+                CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("action:readObject", e);
+                throw new RuntimeException(e);
+            }
         }
     }
 

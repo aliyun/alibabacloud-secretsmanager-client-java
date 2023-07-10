@@ -1,6 +1,7 @@
 package com.aliyuncs.kms.secretsmanager.client;
 
 import com.aliyuncs.exceptions.ClientException;
+import com.aliyuncs.http.FormatType;
 import com.aliyuncs.kms.model.v20160120.GetSecretValueRequest;
 import com.aliyuncs.kms.model.v20160120.GetSecretValueResponse;
 import com.aliyuncs.kms.secretsmanager.client.cache.CacheSecretStoreStrategy;
@@ -189,6 +190,7 @@ public class SecretCacheClient implements Closeable {
         request.setSecretName(secretName);
         request.setVersionStage(stage);
         request.setFetchExtendedConfig(true);
+        request.setAcceptFormat(FormatType.XML);
         GetSecretValueResponse resp;
         try {
             resp = secretClient.getSecretValue(request);

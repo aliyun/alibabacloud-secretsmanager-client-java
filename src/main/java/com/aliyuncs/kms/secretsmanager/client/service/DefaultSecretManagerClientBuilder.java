@@ -7,6 +7,7 @@ import com.aliyuncs.auth.AlibabaCloudCredentialsProvider;
 import com.aliyuncs.auth.InstanceProfileCredentialsProvider;
 import com.aliyuncs.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.aliyuncs.exceptions.ClientException;
+import com.aliyuncs.http.FormatType;
 import com.aliyuncs.http.HttpClientConfig;
 import com.aliyuncs.kms.model.v20160120.GetSecretValueRequest;
 import com.aliyuncs.kms.model.v20160120.GetSecretValueResponse;
@@ -145,6 +146,7 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                 request.setSecretName(req.getSecretName());
                 request.setVersionStage(req.getVersionStage());
                 request.setFetchExtendedConfig(true);
+                request.setAcceptFormat(FormatType.XML);
                 Future<GetSecretValueResponse> future = pool.submit(new RetryGetSecretValueTask(request, regionInfos.get(i), count, finished));
                 futures.add(future);
             }

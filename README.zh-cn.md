@@ -78,6 +78,30 @@ public class CacheClientEnvironmentSample {
 }
 ```
 
+* 通过自定义配置文件(可自定义文件名称或文件路径+文件名称)构建客户端([配置文件设置详情](README_config.zh-cn.md))
+
+```Java
+import com.aliyuncs.kms.secretsmanager.client.SecretCacheClient;
+import com.aliyuncs.kms.secretsmanager.client.SecretCacheClientBuilder;
+import com.aliyuncs.kms.secretsmanager.client.exception.CacheSecretException;
+import com.aliyuncs.kms.secretsmanager.client.model.SecretInfo;
+import com.aliyuncs.kms.secretsmanager.client.service.BaseSecretManagerClientBuilder;
+
+public class CacheClientCustomConfigFileSample {
+
+    public static void main(String[] args) {
+        try {
+            SecretCacheClient client = SecretCacheClientBuilder.newCacheClientBuilder(
+                    BaseSecretManagerClientBuilder.standard().withCustomConfigFile("#customConfigFileName#").build()).build();
+            SecretInfo secretInfo = client.getSecretInfo("#secretName#");
+            System.out.println(secretInfo);
+        } catch (CacheSecretException e) {
+            System.out.println("CacheSecretException:" + e.getMessage());
+        }
+    }
+}
+```
+
 * 通过指定参数(accessKey、accessSecret、regionId等)构建客户端
 
 ```Java

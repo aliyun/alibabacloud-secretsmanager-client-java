@@ -80,6 +80,29 @@ public class CacheClientEnvironmentSample {
 }
 ```
 
+* Build Secrets Manager Client by a custom configuration file (you can customize the file name or file path name) ([Profile Setting Details](README_config.md))
+
+```Java
+import com.aliyuncs.kms.secretsmanager.client.SecretCacheClient;
+import com.aliyuncs.kms.secretsmanager.client.SecretCacheClientBuilder;
+import com.aliyuncs.kms.secretsmanager.client.exception.CacheSecretException;
+import com.aliyuncs.kms.secretsmanager.client.model.SecretInfo;
+import com.aliyuncs.kms.secretsmanager.client.service.BaseSecretManagerClientBuilder;
+
+public class CacheClientCustomConfigFileSample {
+
+    public static void main(String[] args) {
+        try {
+            SecretCacheClient client = SecretCacheClientBuilder.newCacheClientBuilder(
+                    BaseSecretManagerClientBuilder.standard().withCustomConfigFile("#customConfigFileName#").build()).build();
+            SecretInfo secretInfo = client.getSecretInfo("#secretName#");
+            System.out.println(secretInfo);
+        } catch (CacheSecretException e) {
+            System.out.println("CacheSecretException:" + e.getMessage());
+        }
+    }
+}
+```
 
 *  Build Secrets Manager Client by the given parameters(accessKey, accessSecret, regionId, etc)
 

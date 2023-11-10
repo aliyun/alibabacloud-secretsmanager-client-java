@@ -14,9 +14,9 @@ public class UserAgentManager {
     }
 
     public static void registerUserAgent(String userAgent, int priority, String projectVersion) {
-        if (priority > UserAgentManager.priority) {
+        if (priority >= UserAgentManager.priority) {
             synchronized (UserAgentManager.class) {
-                if (priority > UserAgentManager.priority) {
+                if (priority >= UserAgentManager.priority) {
                     UserAgentManager.userAgent = userAgent;
                     UserAgentManager.priority = priority;
                     UserAgentManager.projectVersion = projectVersion;

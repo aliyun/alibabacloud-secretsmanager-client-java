@@ -244,6 +244,7 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
                 config.setEndpoint(regionInfo.getEndpoint());
                 config.setPassword(dKmsConfig.getPassword());
             }
+            config.setUserAgent(UserAgentManager.getUserAgent() + "/" + UserAgentManager.getProjectVersion());
             HttpClientConfig clientConfig = HttpClientConfig.getDefault();
             clientConfig.setIgnoreSSLCerts(dKmsConfig.getIgnoreSslCerts());
             profile.setHttpClientConfig(clientConfig);

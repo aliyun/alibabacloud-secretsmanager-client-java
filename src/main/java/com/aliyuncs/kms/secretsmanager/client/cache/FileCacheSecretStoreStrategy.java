@@ -103,7 +103,6 @@ public class FileCacheSecretStoreStrategy implements CacheSecretStoreStrategy {
     private String encryptSecretVale(String secretValue, byte[] key) throws CacheSecretException {
         byte[] iv = new byte[CacheClientConstant.IV_LENGTH];
         SecureRandom secureRandom = new SecureRandom();
-        secureRandom.setSeed(System.currentTimeMillis());
         secureRandom.nextBytes(iv);
         byte[] bytes = ArrayUtils.concatAll(AES256Utils.AES_256_CBC_MODE_KEY.getBytes(), key, iv, AES256Utils.encrypt(AES256Utils.AES_256_CBC_MODE_KEY, secretValue.getBytes(), key, iv, salt));
         return Base64.getEncoder().encodeToString(bytes);

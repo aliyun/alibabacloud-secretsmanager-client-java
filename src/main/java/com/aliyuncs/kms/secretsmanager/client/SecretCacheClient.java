@@ -51,6 +51,7 @@ public class SecretCacheClient implements Closeable {
     protected RefreshSecretStrategy refreshSecretStrategy;
     protected SecretCacheHook cacheHook;
     protected Map<String, Long> secretTTLMap = new HashMap<>();
+    private Thread monitorThread;
 
     public SecretCacheClient() {
 
@@ -173,7 +174,8 @@ public class SecretCacheClient implements Closeable {
             }
             storeAndRefresh(secretName, secretInfo);
         }
-        new Thread(new MonitorRefreshSecretTask()).start();
+        monitorThread = new Thread(new MonitorRefreshSecretTask());
+        monitorThread.start();
         CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).infof("secretCacheClient init success");
     }
 
@@ -297,6 +299,9 @@ public class SecretCacheClient implements Closeable {
         if (!scheduledThreadPoolExecutor.isShutdown()) {
             scheduledThreadPoolExecutor.shutdownNow();
         }
+        if (monitorThread != null && !monitorThread.isInterrupted()) {
+            monitorThread.interrupt();
+        }
     }
 
     class RefreshSecretTask implements Runnable {
@@ -324,7 +329,7 @@ public class SecretCacheClient implements Closeable {
     class MonitorRefreshSecretTask implements Runnable {
         @Override
         public void run() {
-            while (true) {
+            while (!Thread.currentThread().isInterrupted()) {
                 Set<String> secretNames = nextExecuteTimeMap.keySet();
                 if (secretNames != null && !secretNames.isEmpty()) {
                     for (String secretName : secretNames) {
@@ -355,7 +360,10 @@ public class SecretCacheClient implements Closeable {
                 }
                 try {
                     Thread.sleep(CacheClientConstant.MONITOR_INTERVAL);
-                } catch (Throwable e) {
+                }catch (InterruptedException e){
+                    Thread.currentThread().interrupt();
+                    break;
+                }catch (Throwable e) {
                     CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("MonitorRefreshSecretTask sleep error", e);
                 }
             }

@@ -4,6 +4,8 @@ import com.aliyuncs.exceptions.ClientException;
 import com.aliyuncs.kms.secretsmanager.client.exception.CacheSecretException;
 import com.aliyuncs.kms.secretsmanager.client.model.CacheSecretInfo;
 import com.aliyuncs.kms.secretsmanager.client.model.SecretInfo;
+import com.aliyuncs.kms.secretsmanager.client.utils.CacheClientConstant;
+import com.aliyuncs.kms.secretsmanager.client.utils.CommonLogger;
 
 import java.io.IOException;
 
@@ -14,7 +16,7 @@ public class DefaultSecretCacheHook implements SecretCacheHook {
     /**
      * 缓存的凭据Version Stage
      */
-    private String stage;
+    private final String stage;
 
     public DefaultSecretCacheHook(final String stage) {
         this.stage = stage;

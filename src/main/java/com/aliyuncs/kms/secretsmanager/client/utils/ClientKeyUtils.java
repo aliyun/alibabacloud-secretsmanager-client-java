@@ -45,6 +45,9 @@ public class ClientKeyUtils {
             }
         }
         if (StringUtils.isEmpty(password)) {
+            password = System.getenv(envVariableName);
+        }
+        if (StringUtils.isEmpty(password)) {
             password = System.getenv(CacheClientConstant.DEFAULT_ENV_CLIENT_KEY_PASSWORD_NAME);
         }
         if (StringUtils.isEmpty(password)) {

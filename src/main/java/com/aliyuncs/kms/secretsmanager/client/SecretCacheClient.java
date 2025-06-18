@@ -78,7 +78,8 @@ public class SecretCacheClient implements Closeable {
                 } else {
                     SecretInfo secretInfo = getSecretValue(secretName);
                     storeAndRefresh(secretName, secretInfo);
-                    return cacheHook.put(secretInfo) == null ? null : cacheHook.put(secretInfo).getSecretInfo();
+                    CacheSecretInfo cacheSecret = cacheHook.put(secretInfo);
+                    return cacheSecret == null ? null : cacheSecret.getSecretInfo();
                 }
             }
         }
@@ -233,7 +234,7 @@ public class SecretCacheClient implements Closeable {
         if (cacheSecretInfo != null) {
             cacheSecretStoreStrategy.storeSecret(cacheSecretInfo);
         }
-        CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).infof("secretName:{} refresh success", secretName);
+        CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).infof("secretName:{} refresh success current versionId:{}", secretName, secretInfo.getVersionId());
     }
 
     private void addRefreshTask(String secretName, Runnable runnable) throws CacheSecretException {
@@ -360,10 +361,10 @@ public class SecretCacheClient implements Closeable {
                 }
                 try {
                     Thread.sleep(CacheClientConstant.MONITOR_INTERVAL);
-                }catch (InterruptedException e){
+                } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     break;
-                }catch (Throwable e) {
+                } catch (Throwable e) {
                     CommonLogger.getCommonLogger(CacheClientConstant.MODE_NAME).errorf("MonitorRefreshSecretTask sleep error", e);
                 }
             }

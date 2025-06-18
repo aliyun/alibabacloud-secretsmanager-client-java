@@ -276,9 +276,9 @@ public class DefaultSecretManagerClientBuilder extends BaseSecretManagerClientBu
 
         private void initFromEnv() throws CacheSecretException {
             Map<String, String> envMap = System.getenv();
+            initKmsRegionsFromEnv(envMap);
             initCredentialsProviderFromEnv(envMap);
             initDkmsInstancesFromEnv(envMap);
-            initKmsRegionsFromEnv(envMap);
         }
 
         private void initCredentialsProviderFromEnv(Map<String, String> envMap) {

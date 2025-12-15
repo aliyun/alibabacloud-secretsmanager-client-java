@@ -5,7 +5,6 @@ import com.aliyuncs.kms.secretsmanager.client.model.CacheSecretInfo;
 import com.aliyuncs.kms.secretsmanager.client.model.SecretInfo;
 import com.aliyuncs.utils.StringUtils;
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 
 import java.io.IOException;
 import java.util.Map;
@@ -61,11 +60,11 @@ public class DefaultRefreshSecretStrategy implements RefreshSecretStrategy {
         }
         try {
             Map<String, Object> map = gson.fromJson(secretInfo.getSecretValue(), Map.class);
-            if (map.get(jsonTTLPropertyName) == null) {
+            if (map == null || map.get(jsonTTLPropertyName) == null) {
                 return -1;
             }
             return ((Double) map.get(jsonTTLPropertyName)).longValue();
-        } catch (JsonSyntaxException ignore) {
+        } catch (Exception ignore) {
             return -1;
         }
     }
